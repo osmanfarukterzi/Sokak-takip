@@ -1,59 +1,51 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. CANLI HAVA DURUMU VE GÜVENLİK DUVARI
-    HavaDurumuGetir();
-    
-    // 2. MÜSAİTLİK PANOSU BREADCRUMB
-    PanoyuYukle();
-
-    // 3. TAMAMEN SENİN VERDİĞİN İSİMLERLE SİSTEMİ ÇİZİYORUZ
+    // Önce listeyi hatasız ve anında çiziyoruz (Beyaz ekran ve yükleniyor yazısı kalmasın diye)
     ProgramiCiz();
+    
+    // Panoyu yüklüyoruz
+    PanoyuYukle();
+    
+    // Canlı hava durumunu arka planda, sistemi kilitlemeyecek şekilde çağırıyoruz
+    setTimeout(HavaDurumuGetir, 500);
 });
 
-// AKILLI HAVA DURUMU MOTORU (Engelleme Olursa Yedek Devreye Girer)
 async function HavaDurumuGetir() {
     const dereceEl = document.getElementById("havadurumu-derece");
     const ozetEl = document.getElementById("havadurumu-ozet");
+    if (!dereceEl || !ozetEl) return;
     
     try {
         const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
-        if (!response.ok) throw new Error("API Hatası");
-        
-        const data = await response.json();
-        if (data && data.current_weather) {
-            const sicaklik = Math.round(data.current_weather.temperature);
-            const durumKodu = data.current_weather.weathercode;
-            let durumMetni = "Açık";
-            if (durumKodu >= 1 && durumKodu <= 3) durumMetni = "Parçalı Bulutlu";
-            else if (durumKodu >= 51 && durumKodu <= 67) durumMetni = "Yağmurlu";
-            
-            dereceEl.innerText = `Beşiktaş: ${sicaklik}°C`;
-            ozetEl.innerText = durumMetni;
-            return;
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data.current_weather) {
+                const sicaklik = Math.round(data.current_weather.temperature);
+                dereceEl.innerText = `Beşiktaş: ${sicaklik}°C`;
+                
+                const durumKodu = data.current_weather.weathercode;
+                let durumMetni = "Hava Açık";
+                if (durumKodu >= 1 && durumKodu <= 3) durumMetni = "Parçalı Bulutlu";
+                else if (durumKodu >= 51 && durumKodu <= 67) durumMetni = "Yağmurlu";
+                ozetEl.innerText = durumMetni;
+            }
         }
     } catch (e) {
-        console.log("Canlı hava durumu engellendi veya yüklenemedi, yedek sistem devrede.");
+        console.log("Canlı hava durumu arka planda kısıtlandı, varsayılan değer kullanılıyor.");
     }
-    
-    // Tarayıcı apiyi engellerse "Yükleniyor"da kalmasın diye şık yedek görünüm:
-    dereceEl.innerText = "Beşiktaş: 26°C";
-    ozetEl.innerText = "Hava Açık";
 }
 
-// TAMAMEN SENİN VERDİĞİN PROGRAM SİSTEMİ
 function ProgramiCiz() {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
 
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     
-    // Birebir senin ses kaydında verdiğin isim haritası:
+    // Tamamen senin ses kaydıyla ilettiğin gerçek dağılım matrisi
     const gercekVeri = {
         "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
         "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
         "Çarşamba":  { "12.00-15.00": "Uğur", "15.00-18.00": "Berkan", "18.00-21.00": "Nebi", "21.00-24.00": "Samet" },
         "Perşembe":  { "12.00-15.00": "Mami", "15.00-18.00": "İsmet", "18.00-21.00": "Raşit", "21.00-24.00": "Sirayet" },
-        
-        // Hafta sonu ileriye doğru dönen dinamik slot döngün:
         "Cuma":      { "12.00-15.00": "Doğa", "15.00-18.00": "Nebi", "18.00-21.00": "Raşit", "21.00-24.00": "İsmet" },
         "Cumartesi": { "12.00-15.00": "Mami", "15.00-18.00": "Berkan", "18.00-21.00": "Uğur", "21.00-24.00": "Sirayet" },
         "Pazar":     { "12.00-15.00": "Yiğit", "15.00-18.00": "Faruk", "18.00-21.00": "Samet", "21.00-24.00": "Enes" }
@@ -67,19 +59,17 @@ function ProgramiCiz() {
 
         saatler.forEach(saat => {
             const isim = gercekVeri[gun][saat];
-            
-            // Pazartesi-Perşembe arası 12-15 slotları SABİT slotlar
             const isSabitSlot = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
             
             let kartStili = "";
             let etiketHtml = "";
             
             if (isSabitSlot) {
-                // İSTEDİĞİN SABİT NEON TURUNCU KART tasarımı (Derin Mavi üstüne harika parlar)
+                // İstenen Sabit Turuncu Kart Tasarımı
                 kartStili = "bg-slate-950 border-orange-500/40 text-orange-200 shadow-[0_0_12px_rgba(249,115,22,0.1)]";
                 etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">🔒 SABİT SLOT</span>`;
             } else {
-                // İSTEDİĞİN DÖNÜŞÜMLÜ YEŞİLİMSİ/MAVİ DETAYLI KART tasarımı
+                // İstenen Dönüşümlü Yeşil detaylı Kart Tasarımı
                 kartStili = "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-emerald-500/20 transition-all";
                 etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Dönüşümlü</span>`;
             }
@@ -113,7 +103,6 @@ function ProgramiCiz() {
     });
 }
 
-// MÜSAİTLİK PANOSU FONKSİYONLARI (Aynı Kalıyor)
 function PanoyuYukle() {
     const pano = document.getElementById("musaidlik-notlari");
     if (!pano) return;
