@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sokak Takip - Beşiktaş Meydanı</title>
+    <!-- Tailwind CSS ve FontAwesome İkonları (En kararlı sürümler) -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<!-- ARKA PLANI TEKRAR O GÜZEL DERİN MAVİ/LACİVERTE (bg-slate-950) ÇEVİRDİK -->
+<!-- ARKA PLAN GÖZÜ YORMAYAN ASİL KOYU MAVİ/LACİVERT -->
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6 selection:bg-orange-500/30">
 
-    <!-- ÜST BAŞLIK, BÜYÜK TARİH VE HAVA DURUMU ALANI -->
+    <!-- ÜST BAŞLIK, BÜYÜK TARİH VAN HAVA DURUMU ALANI -->
     <header class="max-w-7xl mx-auto mb-6 grid grid-cols-1 lg:grid-cols-3 items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 gap-6 shadow-xl">
         
         <!-- Sol Taraf: Proje İsmi -->
@@ -21,7 +22,7 @@
             <p class="text-xs text-slate-400 mt-1">📍 Yer: İstanbul Beşiktaş Meydanı</p>
         </div>
         
-        <!-- TAM ORTADA: İSTEDİĞİN KOCAMAN BÜYÜK TARİH ALANI -->
+        <!-- TAM ORTADA: BÜYÜK TARİH ALANI -->
         <div class="text-center bg-slate-950 py-3 px-4 rounded-xl border border-orange-500/20 shadow-inner">
             <span class="block text-[10px] font-bold uppercase tracking-widest text-orange-400/80 mb-0.5">HAFTALIK ÇALIŞMA PLANI</span>
             <h2 class="text-lg md:text-xl font-black text-orange-400 tracking-tight">
@@ -30,11 +31,11 @@
         </div>
         
         <!-- Sağ Taraf: Canlı Hava Durumu Kartı -->
-        <div id="hava-durumu-alani" class="bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 flex items-center gap-3 text-sm max-w-[240px] mx-auto lg:mr-0 shadow-inner">
-            <i class="fa-solidxl fa-cloud-sun text-orange-400 text-xl animate-pulse"></i>
+        <div class="bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 flex items-center gap-3 text-sm max-w-[240px] mx-auto lg:mr-0 shadow-inner">
+            <i class="fa-solid fa-cloud-sun text-orange-400 text-xl"></i>
             <div>
-                <span class="block font-bold text-slate-200" id="havadurumu-derece">Beşiktaş...</span>
-                <span class="text-xs text-orange-400 font-medium" id="havadurumu-ozet">Yükleniyor</span>
+                <span class="block font-bold text-slate-200" id="havadurumu-derece">Beşiktaş: 26°C</span>
+                <span class="text-xs text-orange-400 font-medium" id="havadurumu-ozet">Hava Açık</span>
             </div>
         </div>
     </header>
@@ -62,12 +63,12 @@
                     <i class="fa-solid fa-clipboard-user"></i> Müsaitlik & Devir Panosu
                 </h2>
                 <div class="space-y-2 mb-4">
-                    <input type="text" id="not-yazan" placeholder="İsminiz..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-orange-500">
-                    <textarea id="not-icerik" placeholder="Örn: Bu hafta Çarşamba gelemiyorum..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-orange-500"></textarea>
+                    <input type="text" id="not-yazan" placeholder="İsminiz..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-zinc-200 focus:outline-none focus:border-orange-500">
+                    <textarea id="not-icerik" placeholder="Örn: Bu hafta Çarşamba gelemiyorum..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-zinc-200 focus:outline-none focus:border-orange-500"></textarea>
                     <button onclick="notEkle()" class="w-full text-xs bg-orange-600 hover:bg-orange-500 text-slate-950 font-bold py-1.5 rounded transition shadow-md">Pano'ya Yaz</button>
                 </div>
                 <div id="musaidlik-notlari" class="space-y-2 max-h-[200px] overflow-y-auto pr-1 text-xs">
-                    <!-- Dinamik notlar buraya akacak -->
+                    <!-- Notlar buraya akacak -->
                 </div>
             </div>
         </div>
@@ -75,11 +76,13 @@
         <!-- SAĞ BLOK: YAN YANA GÜNLER -->
         <div class="lg:col-span-3">
             <div class="flex flex-row gap-4 overflow-x-auto pb-4 snap-x" id="program-akisi">
-                <p class="text-slate-500 text-center w-full py-12 italic">Saatler mavi-turuncu düzenle yükleniyor...</p>
+                <!-- JavaScript burayı doğrudan dolduracak -->
             </div>
         </div>
 
     </main>
 
+    <!-- KOD BAĞLANTISI -->
+    <script src="app.js"></script>
 </body>
 </html>
