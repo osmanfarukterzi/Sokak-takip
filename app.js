@@ -15,7 +15,6 @@ const auth = firebase.auth();
 let currentUser = null;
 const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
-    // Diğerlerini sonra buraya ekleyeceğiz
 };
 
 function getAktifIsim(user) {
@@ -35,7 +34,6 @@ const varsayilanProgram = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Performans panosu için alan oluşturma
     const anaKapsayici = document.getElementById("program-akisi")?.parentElement;
     if(anaKapsayici && !document.getElementById("performans-panosu-alani")) {
         const yeniDiv = document.createElement("div");
@@ -308,18 +306,15 @@ function sahneAl(gun, saat) {
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     
-    // Senin mailin üzerinden ismini sabitliyoruz
     let benimIsmim = (currentUser.email === "osmanfarukterzi@gmail.com") ? "Sirayet" : currentUser.displayName.split(' ')[0];
     let benimSlotlarim = [];
 
-    // Veritabanındaki tüm slotları tara
     Object.keys(mevcutSlotlar).forEach(g => {
         if(mevcutSlotlar[g]) {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
                 let nameInSlot = mevcutSlotlar[g][s] ? mevcutSlotlar[g][s].toLowerCase() : "";
                 
-                // Eğer slotta yazan isim senin "Sirayet" isminle eşleşiyorsa
-                if(nameInSlot === "sirayet" || nameInSlot === benimIsmim.toLowerCase()) {
+                if(nameInSlot === "Sirayet" || nameInSlot === benimIsmim.toLowerCase()) {
                     benimSlotlarim.push({ gun: g, saat: s });
                 }
             });
@@ -341,7 +336,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
 
     let bSlot = benimSlotlarim[idx];
 
-    // Takas talebini gönder
     db.ref("takas_talepleri").push().set({
         gonderenUid: currentUser.uid,
         gonderenIsim: benimIsmim,
