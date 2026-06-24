@@ -1,11 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Önce listeyi hatasız ve anında çiziyoruz (Beyaz ekran ve yükleniyor yazısı kalmasın diye)
     ProgramiCiz();
-    
-    // Panoyu yüklüyoruz
     PanoyuYukle();
-    
-    // Canlı hava durumunu arka planda, sistemi kilitlemeyecek şekilde çağırıyoruz
     setTimeout(HavaDurumuGetir, 500);
 });
 
@@ -13,7 +8,6 @@ async function HavaDurumuGetir() {
     const dereceEl = document.getElementById("havadurumu-derece");
     const ozetEl = document.getElementById("havadurumu-ozet");
     if (!dereceEl || !ozetEl) return;
-    
     try {
         const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
         if (response.ok) {
@@ -21,16 +15,11 @@ async function HavaDurumuGetir() {
             if (data && data.current_weather) {
                 const sicaklik = Math.round(data.current_weather.temperature);
                 dereceEl.innerText = `Beşiktaş: ${sicaklik}°C`;
-                
-                const durumKodu = data.current_weather.weathercode;
-                let durumMetni = "Hava Açık";
-                if (durumKodu >= 1 && durumKodu <= 3) durumMetni = "Parçalı Bulutlu";
-                else if (durumKodu >= 51 && durumKodu <= 67) durumMetni = "Yağmurlu";
-                ozetEl.innerText = durumMetni;
+                ozetEl.innerText = data.current_weather.weathercode >= 1 && data.current_weather.weathercode <= 3 ? "Parçalı Bulutlu" : "Hava Açık";
             }
         }
     } catch (e) {
-        console.log("Canlı hava durumu arka planda kısıtlandı, varsayılan değer kullanılıyor.");
+        console.log("Hava durumu yedekte.");
     }
 }
 
@@ -40,7 +29,6 @@ function ProgramiCiz() {
 
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     
-    // Tamamen senin ses kaydıyla ilettiğin gerçek dağılım matrisi
     const gercekVeri = {
         "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
         "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
@@ -59,25 +47,38 @@ function ProgramiCiz() {
 
         saatler.forEach(saat => {
             const isim = gercekVeri[gun][saat];
-            const isSabitSlot = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
+            
+            // Koşul Tanımlamaları
+            const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
+            const isHaftaSonuYanalDongu = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12.00-15.00";
             
             let kartStili = "";
             let etiketHtml = "";
+            let saatRengi = "text-emerald-400";
             
-            if (isSabitSlot) {
-                // İstenen Sabit Turuncu Kart Tasarımı
+            if (isHaftaIciSabit) {
+                // Hafta İçi Sabit Slotlar -> TURUNCU NEON
                 kartStili = "bg-slate-950 border-orange-500/40 text-orange-200 shadow-[0_0_12px_rgba(249,115,22,0.1)]";
                 etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">🔒 SABİT SLOT</span>`;
-            } else {
-                // İstenen Dönüşümlü Yeşil detaylı Kart Tasarımı
-                kartStili = "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-emerald-500/20 transition-all";
-                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Dönüşümlü</span>`;
+                saatRengi = "text-orange-400";
+            } 
+            else if (isHaftaSonuYanalDongu) {
+                // Hafta Sonu 12-15 Yana Kayan Döngü -> NEON CANLI MAVİ (İstediğin Özel Ayar)
+                kartStili = "bg-slate-950 border-cyan-500/40 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.1)]";
+                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">🔄 GÜN DÖNGÜSÜ</span>`;
+                saatRengi = "text-cyan-400";
+            } 
+            else {
+                // Saat Saat İleri Akan Akşam Slotları -> YEŞİL DETAYLI
+                kartStili = "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-emerald-500/25 transition-all";
+                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⏳ SAAT DÖNGÜSÜ</span>`;
+                saatRengi = "text-emerald-400";
             }
 
             slotlarHtml += `
                 <div class="p-3 rounded-xl border ${kartStili} flex justify-between items-center gap-3 min-w-[245px]">
                     <div>
-                        <span class="text-xs font-mono ${isSabitSlot ? 'text-orange-400' : 'text-emerald-400'} block font-bold mb-0.5">${saat}</span>
+                        <span class="text-xs font-mono ${saatRengi} block font-bold mb-0.5">${saat}</span>
                         <span class="font-bold text-sm text-slate-100">${isim}</span>
                     </div>
                     <div>
@@ -93,7 +94,7 @@ function ProgramiCiz() {
                     <span class="font-bold text-base text-slate-100 flex items-center gap-1.5">
                         <i class="fa-regular fa-calendar text-orange-500 text-sm"></i> ${gun}
                     </span>
-                    <span class="text-[10px] text-slate-500">29 Haz - 5 Tem</span>
+                    <span class="text-[10px] text-slate-500">Takvim</span>
                 </div>
                 <div class="space-y-2.5">
                     ${slotlarHtml}
@@ -103,6 +104,7 @@ function ProgramiCiz() {
     });
 }
 
+// MÜSAİTLİK PANOSU KODLARI (Aynı Kalıyor)
 function PanoyuYukle() {
     const pano = document.getElementById("musaidlik-notlari");
     if (!pano) return;
@@ -131,6 +133,7 @@ function notEkle() {
     notlar.unshift({ isim: isimEl.value.trim(), mesaj: mesajEl.value.trim() });
     localStorage.setItem("sokak_notlar", JSON.stringify(notlar));
     isimEl.value = ""; mesajEl.value = "";
+    ProgramiCiz(); // Not eklenince tabloyu bozmasın diye taze tutuyoruz
     PanoyuYukle();
 }
 
