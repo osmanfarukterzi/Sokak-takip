@@ -3,86 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokak Takip - Beşiktaş Meydanı</title>
-    <!-- Tailwind CSS ve FontAwesome İkonları (En kararlı sürümler) -->
+    <title>Beşiktaş Meydanı - Sokak Müzisyenleri Takvimi</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<!-- ARKA PLAN GÖZÜ YORMAYAN ASİL KOYU MAVİ/LACİVERT -->
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6 selection:bg-orange-500/30">
 
-    <!-- ÜST BAŞLIK, BÜYÜK TARİH VAN HAVA DURUMU ALANI -->
-    <header class="max-w-7xl mx-auto mb-6 grid grid-cols-1 lg:grid-cols-3 items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 gap-6 shadow-xl">
-        
-        <!-- Sol Taraf: Proje İsmi -->
+    <header class="max-w-7xl mx-auto mb-6 flex flex-col lg:flex-row justify-between items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 gap-4 shadow-xl">
         <div class="text-center lg:text-left">
-            <h1 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 flex items-center justify-center lg:justify-start gap-2">
-                <i class="fa-solid fa-guitar text-orange-500"></i> Sokak Takip Projesi
+            <h1 class="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 flex items-center justify-center lg:justify-start gap-2">
+                <i class="fa-solid fa-guitars text-orange-500"></i> Beşiktaş Meydanı Müzisyen Takip Sistemi
             </h1>
-            <p class="text-xs text-slate-400 mt-1">📍 Yer: İstanbul Beşiktaş Meydanı</p>
+            <p class="text-xs text-slate-400 mt-1">🎵 WhatsApp Grubu Resmi Çalışma Takvimi</p>
         </div>
         
-        <!-- TAM ORTADA: BÜYÜK TARİH ALANI -->
-        <div class="text-center bg-slate-950 py-3 px-4 rounded-xl border border-orange-500/20 shadow-inner">
-            <span class="block text-[10px] font-bold uppercase tracking-widest text-orange-400/80 mb-0.5">HAFTALIK ÇALIŞMA PLANI</span>
-            <h2 class="text-lg md:text-xl font-black text-orange-400 tracking-tight">
-                29 HAZİRAN - 5 TEMMUZ SLOT TAKVİMİ
+        <div class="text-center bg-slate-950 py-2 px-6 rounded-xl border border-orange-500/20 shadow-inner">
+            <h2 class="text-sm md:text-base font-black text-orange-400 tracking-wide">
+                29 HAZİRAN - 5 TEMMUZ
             </h2>
         </div>
         
-        <!-- Sağ Taraf: Canlı Hava Durumu Kartı -->
-        <div class="bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 flex items-center gap-3 text-sm max-w-[240px] mx-auto lg:mr-0 shadow-inner">
-            <i class="fa-solid fa-cloud-sun text-orange-400 text-xl"></i>
-            <div>
-                <span class="block font-bold text-slate-200" id="havadurumu-derece">Beşiktaş: 26°C</span>
-                <span class="text-xs text-orange-400 font-medium" id="havadurumu-ozet">Hava Açık</span>
+        <div class="flex items-center gap-3">
+            <div id="hava-durumu-alani" class="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-300">
+                <span id="havadurumu-derece">Beşiktaş: 26°C</span>
             </div>
+            <button class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-2 transition shadow-md">
+                <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
+                Google ile Giriş Yap
+            </button>
         </div>
     </header>
 
-    <!-- ANA PANEL -->
-    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <main class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-5 gap-6">
         
-        <!-- SOL BLOK -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Kurallar -->
+        <div class="xl:col-span-1 space-y-6">
             <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-md">
-                <h2 class="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
+                <h2 class="text-xs font-bold text-orange-400 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-circle-exclamation"></i> Önemli Kurallar
                 </h2>
-                <ul class="text-xs text-slate-400 space-y-2.5 leading-relaxed">
-                    <li>• 1 kişi en fazla 2 çıkmayanın hakkını alabilir. 3.sünde sormak zorunda!</li>
-                    <li>• Yer değiştirilecekse önce ilgili kişiye özelden sorulmalıdır.</li>
-                    <li>• Haftada 1 slotu olanlar boş slotlarda önceliklidir.</li>
+                <ul class="text-[11px] text-slate-400 space-y-2 leading-relaxed">
+                    <li>• 1 kişi en fazla 2 devir alabilir.</li>
+                    <li>• Değişiklik önce özelden konuşulmalıdır.</li>
                 </ul>
             </div>
 
-            <!-- Müsaitlik & Devir Panosu -->
             <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-md">
-                <h2 class="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-clipboard-user"></i> Müsaitlik & Devir Panosu
+                <h2 class="text-xs font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solidxl fa-comments"></i> Müsaitlik & Devir Panosu
                 </h2>
-                <div class="space-y-2 mb-4">
-                    <input type="text" id="not-yazan" placeholder="İsminiz..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-zinc-200 focus:outline-none focus:border-orange-500">
-                    <textarea id="not-icerik" placeholder="Örn: Bu hafta Çarşamba gelemiyorum..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-zinc-200 focus:outline-none focus:border-orange-500"></textarea>
-                    <button onclick="notEkle()" class="w-full text-xs bg-orange-600 hover:bg-orange-500 text-slate-950 font-bold py-1.5 rounded transition shadow-md">Pano'ya Yaz</button>
+                <div class="space-y-2 mb-3">
+                    <input type="text" id="not-yazan" placeholder="İsminiz... (Örn: Osman)" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <textarea id="not-icerik" placeholder="Mesajınız... (Örn: Çarşamba gelemiyorum)" rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2 text-slate-200 focus:outline-none focus:border-orange-500"></textarea>
+                    <button onclick="notEkle()" class="w-full text-xs bg-orange-600 hover:bg-orange-500 text-slate-950 font-bold py-1.5 rounded transition shadow-md">Panoya Bildir (Herkes Görür)</button>
                 </div>
-                <div id="musaidlik-notlari" class="space-y-2 max-h-[200px] overflow-y-auto pr-1 text-xs">
-                    <!-- Notlar buraya akacak -->
-                </div>
+                <div id="musaidlik-notlari" class="space-y-2 max-h-[180px] overflow-y-auto text-xs">
+                    </div>
             </div>
         </div>
 
-        <!-- SAĞ BLOK: YAN YANA GÜNLER -->
-        <div class="lg:col-span-3">
+        <div class="xl:col-span-3">
             <div class="flex flex-row gap-4 overflow-x-auto pb-4 snap-x" id="program-akisi">
-                <!-- JavaScript burayı doğrudan dolduracak -->
+                </div>
+        </div>
+
+        <div class="xl:col-span-1">
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-md sticky top-6">
+                <h2 class="text-xs font-bold text-cyan-400 mb-3 flex items-center justify-between">
+                    <span><i class="fa-solid fa-users"></i> Beşiktaş Müzisyenleri</span>
+                    <span class="bg-cyan-500/10 text-cyan-400 text-[10px] px-1.5 py-0.5 rounded-full font-mono">12 Kayıtlı</span>
+                </h2>
+                
+                <div class="space-y-2.5 max-h-[450px] overflow-y-auto pr-1 text-xs">
+                    <div class="flex items-center gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                        <div class="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-[10px]">N</div>
+                        <div>
+                            <p class="font-bold text-slate-200">Nebi</p>
+                            <p class="text-[9px] text-slate-500">nebi@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                        <div class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px]">D</div>
+                        <div>
+                            <p class="font-bold text-slate-200">Doğa</p>
+                            <p class="text-[9px] text-slate-500">doga@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                        <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px]">U</div>
+                        <div>
+                            <p class="font-bold text-slate-200">Uğur</p>
+                            <p class="text-[9px] text-slate-500">ugur@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">
+                        <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">M</div>
+                        <div>
+                            <p class="font-bold text-slate-200">Mami</p>
+                            <p class="text-[9px] text-slate-500">mami@gmail.com</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
     </main>
 
-    <!-- KOD BAĞLANTISI -->
     <script src="app.js"></script>
 </body>
 </html>
