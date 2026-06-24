@@ -1,75 +1,95 @@
-// Tamamen garantili ve hatasız çalışan temiz kod yapısı
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Sokak Takip Programı Yükleniyor...");
+    console.log("Sokak Takip Canlı Sistemi Başlatıldı.");
     
-    const programAkisi = document.getElementById("program-akisi");
-    if (!programAkisi) {
-        console.error("Hata: program-akisi elementi bulunamadı!");
+    // 1. CANLI HAVA DURUMU MOTORU (Beşiktaş İçin Gerçek Zamanlı Çeker)
+    HavaDurumuGetir();
+    
+    // 2. MÜSAİTLİK PANOSU BAŞLANGIÇ VERİLERİ (Tarayıcı hafızalı)
+    PanoyuYukle();
+});
+
+// BEŞİKTAŞ CANLI HAVA DURUMU SİSİRBAZI
+async function HavaDurumuGetir() {
+    const dereceEl = document.getElementById("havadurumu-derece");
+    const ozetEl = document.getElementById("havadurumu-ozet");
+    
+    try {
+        // İstanbul Beşiktaş koordinatları ile ücretsiz hava durumu servisine bağlanıyoruz
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
+        const data = await response.json();
+        
+        if (data && data.current_weather) {
+            const sicaklik = Math.round(data.current_weather.temperature);
+            const durumKodu = data.current_weather.weathercode;
+            
+            // Hava durum koduna göre Türkçe açıklama
+            let durumMetni = "Açık";
+            if (durumKodu >= 1 && durumKodu <= 3) durumMetni = "Parçalı Bulutlu";
+            else if (durumKodu >= 45 && durumKodu <= 48) durumMetni = "Sisli";
+            else if (durumKodu >= 51 && durumKodu <= 67) durumMetni = "Yağmurlu";
+            else if (durumKodu >= 71 && durumKodu <= 77) durumMetni = "Karlı";
+            else if (durumKodu >= 80 && durumKodu <= 82) durumMetni = "Sağanak Yağış";
+            
+            dereceEl.innerText = `Beşiktaş: ${sicaklik}°C`;
+            ozetEl.innerText = durumMetni;
+        } else {
+            dereceEl.innerText = "Beşiktaş";
+            ozetEl.innerText = "Hava Açık";
+        }
+    } catch (error) {
+        console.error("Hava durumu çekilemedi:", error);
+        dereceEl.innerText = "Beşiktaş";
+        ozetEl.innerText = "Hava Durumu Aktif";
+    }
+}
+
+// MÜSAİTLİK PANOSU İŞLEMLERİ
+function PanoyuYukle() {
+    const pano = document.getElementById("musaidlik-notlari");
+    if (!pano) return;
+    
+    const notlar = JSON.parse(localStorage.getItem("sokak_notlar")) || [];
+    if (notlar.length === 0) {
+        pano.innerHTML = `<p class="text-slate-500 text-center italic">Henüz bir bildirim yazılmamış.</p>`;
         return;
     }
-
-    // PDF dosyasındaki gerçek program verilerin
-    const programVerisi = [
-        { gun: "Pazartesi", saat: "12.00-15.30", muzisyen: "Sirayet" },
-        { gun: "Pazartesi", saat: "15.30-20.30", muzisyen: "Berkhan / Eren" },
-        { gun: "Pazartesi", saat: "20.30-23.00", muzisyen: "Uğur" },
-        
-        { gun: "Salı", saat: "12.00-15.30", muzisyen: "Raşit" },
-        { gun: "Salı", saat: "15.30-20.30", muzisyen: "Samet / İsmet" },
-        { gun: "Salı", saat: "20.30-23.00", muzisyen: "Doğa" },
-        
-        { gun: "Çarşamba", saat: "12.00-15.30", muzisyen: "Nebi" },
-        { gun: "Çarşamba", saat: "15.30-20.30", muzisyen: "Eren / Samet" },
-        { gun: "Çarşamba", saat: "20.30-23.00", muzisyen: "Berkhan" },
-        
-        { gun: "Perşembe", saat: "12.00-15.30", muzisyen: "Yimami" },
-        { gun: "Perşembe", saat: "15.30-20.30", muzisyen: "Raşit / Sirayet" },
-        { gun: "Perşembe", saat: "20.30-23.00", muzisyen: "İsmet" },
-        
-        { gun: "Cuma", saat: "12.00-15.30", muzisyen: "Uğur" },
-        { gun: "Cuma", saat: "15.30-20.30", muzisyen: "İsmet / Berkhan" },
-        { gun: "Cuma", saat: "20.30-23.00", muzisyen: "Eren" },
-        
-        { gun: "Cumartesi", saat: "12.00-15.30", muzisyen: "Doğa" },
-        { gun: "Cumartesi", saat: "15.30-20.30", muzisyen: "Sirayet / Faruk" },
-        { gun: "Cumartesi", saat: "20.30-23.00", muzisyen: "Samet" },
-        
-        { gun: "Pazar", saat: "12.00-15.30", muzisyen: "Yimami" },
-        { gun: "Pazar", saat: "15.30-20.30", muzisyen: "Enes / Nebi" },
-        { gun: "Pazar", saat: "20.30-23.00", muzisyen: "Raşit" }
-    ];
-
-    programAkisi.innerHTML = "";
-    const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-
-    gunler.forEach(gun => {
-        const oGununSlotlari = programVerisi.filter(p => p.gun === gun);
-        let slotlarHtml = "";
-
-        oGununSlotlari.forEach(slot => {
-            slotlarHtml += `
-                <div class="p-3 bg-slate-900/80 rounded-lg border border-slate-700/50 flex justify-between items-center text-sm">
-                    <div>
-                        <span class="text-xs font-mono text-amber-400 block">${slot.saat}</span>
-                        <span class="font-medium text-slate-200">${slot.muzisyen}</span>
-                    </div>
-                    <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">Dolu</span>
-                </div>
-            `;
-        });
-
-        const isHaftaSonu = ["Cuma", "Cumartesi", "Pazar"].includes(gun);
-        
-        programAkisi.innerHTML += `
-            <div class="bg-slate-800 rounded-xl border ${isHaftaSonu ? 'border-amber-500/20' : 'border-slate-700'} overflow-hidden shadow">
-                <div class="${isHaftaSonu ? 'bg-amber-500/10 text-amber-400' : 'bg-slate-700/40 text-slate-200'} px-4 py-2 font-bold text-sm border-b flex justify-between items-center">
-                    <span>${gun}</span>
-                    <span class="text-[10px] font-normal opacity-60">${isHaftaSonu ? 'Sabit Gün' : 'Dönüşümlü'}</span>
-                </div>
-                <div class="p-3 space-y-2">
-                    ${slotlarHtml}
-                </div>
+    
+    pano.innerHTML = "";
+    notlar.forEach((item, index) => {
+        pano.innerHTML += `
+            <div class="bg-zinc-900 p-2.5 rounded-lg border border-purple-900/30 text-xs relative group">
+                <span class="font-bold text-purple-400 block mb-0.5">${item.isim}:</span>
+                <p class="text-slate-300 pr-4">${item.mesaj}</p>
+                <button onclick="notSil(${index})" class="absolute top-1 right-2 text-rose-500 opacity-0 group-hover:opacity-100 transition text-[10px]">Sil</button>
             </div>
         `;
     });
-});
+}
+
+function notEkle() {
+    const isimEl = document.getElementById("not-yazan");
+    const mesajEl = document.getElementById("not-icerik");
+    
+    if (!isimEl.value.trim() || !mesajEl.value.trim()) {
+        alert("Lütfen isim ve mesaj alanını doldurun!");
+        return;
+    }
+    
+    const notlar = JSON.parse(localStorage.getItem("sokak_notlar")) || [];
+    notlar.unshift({
+        isim: isimEl.value.trim(),
+        mesaj: mesajEl.value.trim()
+    });
+    
+    localStorage.setItem("sokak_notlar", JSON.stringify(notlar));
+    isimEl.value = "";
+    mesajEl.value = "";
+    PanoyuYukle();
+}
+
+function notSil(index) {
+    const notlar = JSON.parse(localStorage.getItem("sokak_notlar")) || [];
+    notlar.splice(index, 1);
+    localStorage.setItem("sokak_notlar", JSON.stringify(notlar));
+    PanoyuYukle();
+}
