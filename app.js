@@ -56,10 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }
-            db.ref("muzisyenler/" + user.uid).set({
-                name: user.displayName,
+            db.ref("muzisyenler/" + user.uid).update({
+                name: user.displayName.includes("Osman Faruk") ? "Sirayet" : user.displayName.split(' ')[0],
                 picture: user.photoURL,
-                email: user.email
+                lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
         } else {
             currentUser = null;
@@ -268,10 +268,17 @@ function PerformansPanosunuCiz() {
 }
 
 function slotBiral(gun, saat) {
-    if (!confirm(`${gun} günü ${saat} slotunuzu boşaltmak istediğinize emin misiniz?`)) return;
+    if (!confirm(`${gun} günü ${saat} slotunu boşaltmak istediğine emin misin?`)) return;
+    
+    let isim = currentUser.displayName.toLowerCase().includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
+    
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
-        db.ref("notlar").push({ uid: "sistem", isim: "📢 BİLDİRİM", mesaj: `${currentUser.displayName}, ${gun} ${saat} slotunu boşa çıkardı.` });
-    });
+        db.ref("notlar").push({
+            isim: isim,
+            mesaj: `${gun} ${saat} slotunu iptal etti.`
+        });
+        alert("Slot boşaltıldı ve sisteme bildirildi.");
+    }).catch(e => alert("Hata: " + e.message));
 }
 
 function sahneAl(gun, saat) {
@@ -283,21 +290,27 @@ function sahneAl(gun, saat) {
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    let userGroupKey = currentUser.displayName.toLowerCase();
+    let userDisplayName = currentUser.displayName.toLowerCase();
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(g => {
         if(mevcutSlotlar[g]) {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
                 let nameInSlot = mevcutSlotlar[g][s] ? mevcutSlotlar[g][s].toLowerCase() : "";
-                if(userGroupKey.includes(nameInSlot) || (nameInSlot.includes("sirayet") && userGroupKey.includes("osman faruk"))) {
+                // BURASI ÇÖZÜLDÜ: Hem tam isimle hem de Sirayet ile eşleştirme yapıyoruz
+                if(userDisplayName.includes(nameInSlot) || 
+                   (nameInSlot.includes("sirayet") && userDisplayName.includes("osman faruk")) ||
+                   (userDisplayName.includes("osman faruk") && nameInSlot === "sirayet")) {
                     benimSlotlarim.push({ gun: g, saat: s });
                 }
             });
         }
     });
 
-    if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif bir slotunuz bulunmuyor!"); return; }
+    if(benimSlotlarim.length === 0) { 
+        alert("Sistem seni tanıyamadı veya aktif slotun yok! (Slotun üzerinde ismin yazdığından emin ol)"); 
+        return; 
+    }
     
     let metin = "Hangi slotunuzu vermek istiyorsunuz?\n\n";
     benimSlotlarim.forEach((item, idx) => { metin += `${idx + 1}) ${item.gun} - ${item.saat}\n`; });
@@ -306,11 +319,10 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(isNaN(idx) || idx < 0 || idx >= benimSlotlarim.length) return;
 
     let bSlot = benimSlotlarim[idx];
-    let benimGrupIsmım = userGroupKey.includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
+    let gonderenIsim = userDisplayName.includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
 
     db.ref("takas_talepleri").push().set({
-        gonderenUid: currentUser.uid,
-        gonderenIsim: benimGrupIsmım,
+        gonderenIsim: gonderenIsim,
         gonderenGun: bSlot.gun,
         gonderenSaat: bSlot.saat,
         aliciIsim: karsiMuzisyen,
@@ -318,7 +330,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas isteği panoya gönderildi, onay bekleniyor!");
+    alert("Takas isteği gönderildi!");
 }
 
 function CanliTakaslariDinle() {
