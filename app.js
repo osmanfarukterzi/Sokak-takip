@@ -17,7 +17,17 @@ const auth = firebase.auth();
 let currentUser = null;
 let mevcutSlotlar = {}; 
 
-// SİTE AÇILDIĞINDA BAŞLAYACAK MOTOR
+// YEDEK SABİT PROGRAM (Veritabanında sorun olsa bile siteyi ayakta tutar)
+const varsayilanProgram = {
+    "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
+    "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
+    "Çarşamba":  { "12.00-15.00": "Uğur", "15.00-18.00": "Berkan", "18.00-21.00": "Nebi", "21.00-24.00": "Samet" },
+    "Perşembe":  { "12.00-15.00": "Mami", "15.00-18.00": "İsmet", "18.00-21.00": "Raşit", "21.00-24.00": "Sirayet" },
+    "Cuma":      { "12.00-15.00": "Doğa", "15.00-18.00": "Nebi", "18.00-21.00": "Raşit", "21.00-24.00": "İsmet" },
+    "Cumartesi": { "12.00-15.00": "Mami", "15.00-18.00": "Berkan", "18.00-21.00": "Uğur", "21.00-24.00": "Sirayet" },
+    "Pazar":     { "12.00-15.00": "Yiğit", "15.00-18.00": "Faruk", "18.00-21.00": "Samet", "21.00-24.00": "Enes" }
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     TarihiOtomatikGuncelle();
     VeritabaniniKontrolEtVeDinle();
@@ -25,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
 
-    // Kullanıcı giriş durumunu takip et
     auth.onAuthStateChanged(user => {
         const authArea = document.getElementById("auth-status-area");
         const notYazanInput = document.getElementById("not-yazan");
@@ -59,28 +68,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
         }
-        // Giriş veya çıkış yapıldığında arayüzü tetikle
-        if(mevcutSlotlar && Object.keys(mevcutSlotlar).length > 0) {
-            ProgramiCiz(mevcutSlotlar);
-        }
+        ProgramiCiz(mevcutSlotlar);
     });
 });
 
-// 1. VERİTABANI KONTROLÜ VE ANLIK SLOT TAKİBİ
 function VeritabaniniKontrolEtVeDinle() {
-    const varsayilanProgram = {
-        "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
-        "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
-        "Çarşamba":  { "12.00-15.00": "Uğur", "15.00-18.00": "Berkan", "18.00-21.00": "Nebi", "21.00-24.00": "Samet" },
-        "Perşembe":  { "12.00-15.00": "Mami", "15.00-18.00": "İsmet", "18.00-21.00": "Raşit", "21.00-24.00": "Sirayet" },
-        "Cuma":      { "12.00-15.00": "Doğa", "15.00-18.00": "Nebi", "18.00-21.00": "Raşit", "21.00-24.00": "İsmet" },
-        "Cumartesi": { "12.00-15.00": "Mami", "15.00-18.00": "Berkan", "18.00-21.00": "Uğur", "21.00-24.00": "Sirayet" },
-        "Pazar":     { "12.00-15.00": "Yiğit", "15.00-18.00": "Faruk", "18.00-21.00": "Samet", "21.00-24.00": "Enes" }
-    };
-
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
-        if (!veriler) {
+        
+        // Eğer veritabanı tamamen çökmüşse veya boşsa yedek takvimi yükle ve Firebase'e yaz
+        if (!veriler || Object.keys(veriler).length === 0) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
         }
@@ -89,10 +86,12 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-// 2. PROGRAM ÇİZİCİ VE YETKİLENDİRME MOTORU
 function ProgramiCiz(veri) {
     const programAkisi = document.getElementById("program-akisi");
-    if (!programAkisi || !veri) return;
+    if (!programAkisi) return;
+
+    // Eğer veritabanından gelen veri bir şekilde tanımsızsa sistemin çökmesini engellemek için yedek programı devreye al
+    const aktifVeri = (veri && Object.keys(veri).length > 0) ? veri : varsayilanProgram;
 
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
@@ -103,15 +102,15 @@ function ProgramiCiz(veri) {
     }
 
     gunler.forEach(gun => {
-        if (!veri[gun]) {
-            veri[gun] = { "12.00-15.00": "", "15.00-18.00": "", "18.00-21.00": "", "21.00-24.00": "" };
+        if (!aktifVeri[gun]) {
+            aktifVeri[gun] = { "12.00-15.00": "BOŞ", "15.00-18.00": "BOŞ", "18.00-21.00": "BOŞ", "21.00-24.00": "BOŞ" };
         }
 
         let slotlarHtml = "";
         const saatler = ["12.00-15.00", "15.00-18.00", "18.00-21.00", "21.00-24.00"];
 
         saatler.forEach(saat => {
-            const isim = veri[gun][saat] || "BOŞ";
+            const isim = aktifVeri[gun][saat] || "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
             const güvenliIsim = isim ? isim.toLowerCase() : "";
             
@@ -165,7 +164,6 @@ function ProgramiCiz(veri) {
     });
 }
 
-// 3. "ÇIKAMIYORUM / İPTAL ET" FONKSİYONU
 function slotBiral(gun, saat) {
     if (!confirm(`${gun} günü ${saat} slotunuzu boşaltmak ve iptal etmek istediğinize emin misiniz?`)) return;
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
@@ -177,7 +175,6 @@ function slotBiral(gun, saat) {
     });
 }
 
-// 4. "BOŞ SLOTU KAPMA / SAHNE AL" FONKSİYONU
 function sahneAl(gun, saat) {
     if(!currentUser) return;
     let sahneIsmi = currentUser.displayName;
@@ -198,10 +195,10 @@ function sahneAl(gun, saat) {
     });
 }
 
-// 5. TAKAS İSTEK PENCERESİ VE LOJİĞİ
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     let benimSlotlarim = [];
     const gunler = Object.keys(mevcutSlotlar);
+    if(!currentUser) return;
     let userGroupKey = currentUser.displayName.toLowerCase();
 
     gunler.forEach(g => {
@@ -250,7 +247,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 }
 
-// 6. CANLI TAKAS TEKLİFLERİNİ EKLEME VE ONAYLAMA/REDDETME DİNLEYİCİSİ
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const takasAlani = document.getElementById("canli-takas-talepleri-alani");
@@ -296,7 +292,6 @@ function CanliTakaslariDinle() {
     });
 }
 
-// TAKAS CEVAP MOTORU
 function takasCevapla(key, aksiyon) {
     db.ref(`takas_talepleri/${key}`).once("value", snapshot => {
         const t = snapshot.val();
@@ -327,7 +322,6 @@ function takasCevapla(key, aksiyon) {
     });
 }
 
-// TARİH MOTORU
 function TarihiOtomatikGuncelle() {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (!baslikEl) return;
@@ -342,14 +336,12 @@ function TarihiOtomatikGuncelle() {
     baslikEl.innerText = `${hedefPazartesi.getDate()} ${aylar[hedefPazartesi.getMonth()]} - ${hedefPazar.getDate()} ${aylar[hedefPazar.getMonth()]} SLOT TAKVİMİ`;
 }
 
-// GOOGLE GİRİŞ & ÇIKIŞ
 function googleGirisYap() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(e => alert("Hata: " + e.message));
 }
 function cikisYap() { auth.signOut(); }
 
-// DİĞER CANLI VERİ AKIŞLARI
 function CanliVerileriDinle() {
     db.ref("notlar").on("value", snapshot => {
         const pano = document.getElementById("musaidlik-notlari");
