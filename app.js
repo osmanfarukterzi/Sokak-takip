@@ -17,6 +17,7 @@ const auth = firebase.auth();
 let currentUser = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+    TarihiOtomatikGuncelle(); // Başlığı otomatik hesaplayan yeni motor
     ProgramiCiz();
     CanliVerileriDinle();
     setTimeout(HavaDurumuGetir, 500);
@@ -38,7 +39,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }
-            // Giriş yapanı veritabanına yaz
             db.ref("muzisyenler/" + user.uid).set({
                 name: user.displayName,
                 picture: user.photoURL,
@@ -59,11 +59,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+// OTOMATİK TARİH ARALIĞI HESAPLAMA MOTORU
+function TarihiOtomatikGuncelle() {
+    const baslikEl = document.getElementById("dinamik-tarih-basligi");
+    if (!baslikEl) return;
+
+    const simdi = new Date();
+    const gunMesafe = simdi.getDay() === 0 ? 6 : simdi.getDay() - 1; // Pazartesiye olan uzaklık
+    
+    // Haftanın Pazartesi gününü bul
+    const pazartesi = new Date(simdi);
+    pazartesi.setDate(simdi.getDate() - gunMesafe);
+    
+    // Haftanın Pazar gününü bul
+    const pazar = new Date(pazartesi);
+    pazar.setDate(pazartesi.getDate() + 6);
+
+    const aylar = [
+        "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", 
+        "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
+    ];
+
+    const pztGun = pazartesi.getDate();
+    const pztAy = aylar[pazartesi.getMonth()];
+    
+    const pzrGun = pazar.getDate();
+    const pzrAy = aylar[pazar.getMonth()];
+
+    // Başlığı dinamik olarak yazdır (Örn: 29 HAZİRAN - 5 TEMMUZ)
+    baslikEl.innerText = `${pztGun} ${pztAy} - ${pzrGun} ${pzrAy} SLOT TAKVİMİ`;
+}
+
 // Google Pop-up Giriş Fonksiyonu
 function googleGirisYap() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch(error => {
-        alert("Giriş izni hatası: Firebase panelinde Authentication -> Google ayarını açtığınızdan emin olun. Hata: " + error.message);
+        alert("Giriş izni hatası! Hata: " + error.message);
     });
 }
 
@@ -73,7 +104,6 @@ function cikisYap() {
 
 // BULUTTAN ANLIK VERİ AKIŞI (CHAT VE ÜYELER)
 function CanliVerileriDinle() {
-    // 1. Notları dinle
     db.ref("notlar").on("value", snapshot => {
         const pano = document.getElementById("musaidlik-notlari");
         if (!pano) return;
@@ -96,7 +126,6 @@ function CanliVerileriDinle() {
         });
     });
 
-    // 2. Kayıtlı Müzisyenleri dinle
     db.ref("muzisyenler").on("value", snapshot => {
         const listeAlani = document.getElementById("muzisyen-listesi-alan");
         const sayac = document.getElementById("aktif-uye-sayisi");
@@ -142,7 +171,7 @@ function notSil(key) {
     db.ref("notlar").child(key).remove();
 }
 
-// PROGRAM ÇİZİMİ VE MATEMATİKSEL AKILLI HAFTALIK DÖNGÜ MOTORU
+// PROGRAM ÇİZİMİ
 function ProgramiCiz() {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
@@ -174,19 +203,19 @@ function ProgramiCiz() {
             
             if (isHaftaIciSabit) {
                 kartStili = "bg-slate-950 border-orange-500/40 text-orange-200 shadow-[0_0_12px_rgba(249,115,22,0.1)]";
-                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">🔒 SABİT SLOT</span>`;
+                etikeHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">🔒 SABİT SLOT</span>`;
                 saatRengi = "text-orange-400";
             } else if (isHaftaSonuYanalDongu) {
                 kartStili = "bg-slate-950 border-cyan-500/40 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.1)]";
-                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">🔄 GÜN DÖNGÜSÜ</span>`;
+                etikeHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">🔄 GÜN DÖNGÜSÜ</span>`;
                 saatRengi = "text-cyan-400";
             } else {
                 kartStili = "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-emerald-500/25 transition-all";
-                etiketHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⏳ SAAT DÖNGÜSÜ</span>`;
+                etikeHtml = `<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">⏳ SAAT DÖNGÜSÜ</span>`;
                 saatRengi = "text-emerald-400";
             }
 
-            slotlarHtml += `<div class="p-3 rounded-xl border ${kartStili} flex justify-between items-center gap-3 min-w-[245px]"><div><span class="text-xs font-mono ${saatRengi} block font-bold mb-0.5">${saat}</span><span class="font-bold text-sm text-slate-100">${isim}</span></div><div>${etiketHtml}</div></div>`;
+            slotlarHtml += `<div class="p-3 rounded-xl border ${kartStili} flex justify-between items-center gap-3 min-w-[245px]"><div><span class="text-xs font-mono ${saatRengi} block font-bold mb-0.5">${saat}</span><span class="font-bold text-sm text-slate-100">${isim}</span></div><div>${etikeHtml}</div></div>`;
         });
 
         programAkisi.innerHTML += `<div class="bg-slate-900 rounded-2xl border border-slate-800 p-4 shadow-lg min-w-[295px] snap-start flex-shrink-0"><div class="border-b border-slate-800 pb-2.5 mb-3 flex justify-between items-center"><span class="font-bold text-base text-slate-100 flex items-center gap-1.5"><i class="fa-regular fa-calendar text-orange-500 text-sm"></i> ${gun}</span><span class="text-[10px] text-slate-500">Takvim</span></div><div class="space-y-2.5">${slotlarHtml}</div></div>`;
