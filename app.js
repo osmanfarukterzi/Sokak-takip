@@ -17,7 +17,7 @@ const auth = firebase.auth();
 let currentUser = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    TarihiOtomatikGuncelle(); // HASSAS PAZAR GECESİ MOTORU
+    TarihiOtomatikGuncelle(); // HAZIRLIK HAFTASI MOTORU
     ProgramiCiz();
     CanliVerileriDinle();
     setTimeout(HavaDurumuGetir, 500);
@@ -59,28 +59,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// OSMAN'IN İSTEDİĞİ HASSAS HAFTALIK DÖNGÜ MOTORU
+// HAZIRLIK İÇİN 1 HAFTA İLERİYİ GÖSTEREN MOTOR
 function TarihiOtomatikGuncelle() {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (!baslikEl) return;
 
     const simdi = new Date();
-    const bugunHangiGun = simdi.getDay(); // 0: Pazar, 1: Pzt, 2: Salı...
+    const bugunHangiGun = simdi.getDay(); // 0: Pazar, 1: Pzt...
     
     let hedefPazartesi = new Date(simdi);
 
-    if (bugunHangiGun === 0) {
-        // Eğer günlerden PAZAR ise, zaten o günün gecesi devir olacağı için
-        // sistem yarın başlayacak olan Pazartesi haftasını gösteriyor olmalı.
-        hedefPazartesi.setDate(simdi.getDate() + 1);
-    } else {
-        // Hafta içi bir gündeysek (Pzt-Cmt arası), önümüzdeki ilk Pazartesiye kalan günü hesapla
-        const kalanGun = 8 - bugunHangiGun;
-        hedefPazartesi.setDate(simdi.getDate() + kalanGun - 7); 
-        // Üst satır, takvimi tam 29 Haziran - 5 Temmuz aralığına kilitleyecek!
-    }
+    // Şu an hangi gündeysek o haftanın Pazartesi gününü bulup üzerine tam 7 gün ekliyoruz
+    const gunMesafe = bugunHangiGun === 0 ? 6 : bugunHangiGun - 1;
+    hedefPazartesi.setDate(simdi.getDate() - gunMesafe + 7); 
     
-    // Pazar gününü bul (+6 gün ekle)
+    // Pazar gününü hesapla (+6 gün)
     const hedefPazar = new Date(hedefPazartesi);
     hedefPazar.setDate(hedefPazartesi.getDate() + 6);
 
@@ -95,7 +88,7 @@ function TarihiOtomatikGuncelle() {
     const pzrGun = hedefPazar.getDate();
     const pzrAy = aylar[hedefPazar.getMonth()];
 
-    // Başlığı tam istediğin gibi dinamik olarak yazdırır
+    // Başlığı tam istediğin hazırlık haftasına kurar
     baslikEl.innerText = `${pztGun} ${pztAy} - ${pzrGun} ${pzrAy} SLOT TAKVİMİ`;
 }
 
