@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght class=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         ::-webkit-scrollbar { height: 12px; width: 8px; }
@@ -19,7 +19,6 @@
 </head>
 <body class="min-h-full bg-[#030712] antialiased flex flex-col selection:bg-orange-500/30 selection:text-orange-200">
 
-    <!-- Üst Menü / Navbar -->
     <header class="bg-[#0b1329] border-b border-slate-800/80 sticky top-0 z-50 px-6 py-4 shadow-2xl">
         <div class="max-w-[1800px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -34,7 +33,7 @@
             
             <div class="bg-[#050b18] border border-slate-800 px-6 py-2.5 rounded-xl text-center shadow-inner">
                 <span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest block mb-0.5">Haftalık Çalışma Planı</span>
-                <h2 id="dinamik-tarih-basligi" class="text-base sm:text-lg font-black text-amber-400 tracking-wide">29 HAZİRAN - 5 TEMMUZ SLOT TAKVİMİ</h2>
+                <h2 id="dinamik-tarih-basligi" class="text-base sm:text-lg font-black text-amber-400 tracking-wide">HAFTALIK SLOT TAKVİMİ</h2>
             </div>
 
             <div class="flex items-center gap-4">
@@ -50,12 +49,9 @@
         </div>
     </header>
 
-    <!-- Ana İçerik Alanı -->
     <main class="flex-1 max-w-[1800px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 xl:grid-cols-4 gap-8">
         
-        <!-- Sol Sabit Panel -->
         <div class="xl:col-span-1 space-y-6">
-            <!-- Önemli Kurallar -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <h3 class="font-bold text-sm text-orange-500 uppercase tracking-wider flex items-center gap-2 mb-3">
                     <i class="fa-solid fa-circle-exclamation"></i> Önemli Kurallar
@@ -66,7 +62,6 @@
                 </ul>
             </div>
 
-            <!-- Müsaitlik & Devir Panosu -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[340px]">
                 <h3 class="font-bold text-sm text-emerald-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                     <i class="fa-regular fa-comments"></i> Müsaitlik & Devir Panosu
@@ -81,7 +76,6 @@
                 </div>
             </div>
 
-            <!-- Gelişmiş Canlı Takas İstekleri Alanı (BUTONLAR BURAYA GELECEK) -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[280px]">
                 <h3 class="font-bold text-sm text-amber-400 uppercase tracking-wider flex items-center gap-2 mb-3">
                     <i class="fa-solid fa-right-left"></i> Akıllı Takas Paneli
@@ -91,7 +85,6 @@
                 </div>
             </div>
 
-            <!-- Kayıtlı / Aktif Müzisyenler -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[220px]">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-bold text-sm text-cyan-400 uppercase tracking-wider flex items-center gap-2">
@@ -103,11 +96,24 @@
             </div>
         </div>
 
-        <!-- Sağ Taraf: Büyük ve Geniş Slot Çizelgesi -->
-        <div class="xl:col-span-3 overflow-hidden">
-            <div id="program-akisi" class="flex gap-5 overflow-x-auto pb-6 pt-1 snap-x scroll-smooth outline-none">
-                <!-- JavaScript kartları buraya basacak -->
+        <div class="xl:col-span-3 space-y-6 overflow-hidden">
+            
+            <div id="canli-sahne-tabelasi" class="bg-gradient-to-r from-[#0b1329] via-[#0f1d3a] to-[#0b1329] border border-orange-500/30 rounded-2xl p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 transition-all">
+                <div class="flex items-center gap-4 text-center sm:text-left">
+                    <div class="w-3 h-3 bg-red-500 rounded-full animate-ping shadow-[0_0_10px_#ef4444] shrink-0 hidden sm:block" id="canli-isik"></div>
+                    <div>
+                        <span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest block mb-0.5">Şu An Beşiktaş Meydanı'nda</span>
+                        <h2 id="su-an-sahnede-kim-var" class="text-2xl font-black text-white tracking-wide">Yükleniyor...</h2>
+                    </div>
+                </div>
+                <div class="bg-[#050b18]/80 border border-slate-800/80 px-6 py-3 rounded-xl text-center min-w-[200px] shadow-inner">
+                    <span id="sayac-etiket" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Slotun Bitmesine Kalan Süre</span>
+                    <span id="canli-geri-sayim" class="text-2xl font-black font-mono text-amber-400 tracking-wider">00:00:00</span>
+                </div>
             </div>
+
+            <div id="program-akisi" class="flex gap-5 overflow-x-auto pb-6 pt-1 snap-x scroll-smooth outline-none">
+                </div>
         </div>
 
     </main>
