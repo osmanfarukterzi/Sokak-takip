@@ -17,7 +17,7 @@ const auth = firebase.auth();
 let currentUser = null;
 let mevcutSlotlar = {}; 
 
-// YEDEK SABİT PROGRAM (Veritabanında sorun olsa bile siteyi ayakta tutar)
+// YEDEK SABİT PROGRAM (Sistem koruması)
 const varsayilanProgram = {
     "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
     "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if(notYazanInput) notYazanInput.value = user.displayName;
             if(authArea) {
                 authArea.innerHTML = `
-                    <div class="flex items-center gap-2 bg-slate-950 py-1.5 px-3 rounded-xl border border-emerald-500/30">
+                    <div class="flex items-center gap-2 bg-slate-950 py-1.5 px-3 rounded-xl border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                         <img src="${user.photoURL}" class="w-6 h-6 rounded-full border border-emerald-500" referrerpolicy="no-referrer">
                         <span class="text-xs font-bold text-emerald-400">${user.displayName.split(' ')[0]} Sahnede</span>
                         <button onclick="cikisYap()" class="text-[10px] text-rose-400 ml-2 hover:underline cursor-pointer">Çıkış</button>
@@ -61,8 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if(notYazanInput) notYazanInput.value = "";
             if(authArea) {
                 authArea.innerHTML = `
-                    <button onclick="googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shrink-0 cursor-pointer">
-                        <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
+                    <button onclick="googleGirisYap()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-black py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shrink-0 cursor-pointer">
+                        <img src="https://www.google.com/favicon.ico" class="w-4 h-4 brightness-0" alt="Google">
                         Google ile Giriş Yap
                     </button>
                 `;
@@ -75,8 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
-        
-        // Eğer veritabanı tamamen çökmüşse veya boşsa yedek takvimi yükle ve Firebase'e yaz
         if (!veriler || Object.keys(veriler).length === 0) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
@@ -86,13 +84,12 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
+// EVET, RENKLERİN VE EFSANE TASARIMIN GERİ GELDİĞİ YER BURASI!
 function ProgramiCiz(veri) {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
 
-    // Eğer veritabanından gelen veri bir şekilde tanımsızsa sistemin çökmesini engellemek için yedek programı devreye al
     const aktifVeri = (veri && Object.keys(veri).length > 0) ? veri : varsayilanProgram;
-
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
 
@@ -123,43 +120,55 @@ function ProgramiCiz(veri) {
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
             const isHaftaSonuYanalDongu = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12.00-15.00";
             
-            let kartStili = "bg-slate-950/60 border-slate-800", butonlarHtml = "";
+            let kartStili = "bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80 shadow-md";
+            let butonlarHtml = "";
+            let isimStili = "text-slate-200";
             
             if (isBoş) {
-                kartStili = "bg-amber-950/20 border-dashed border-amber-500/40 animate-pulse";
+                // PARLAYAN VE YANIP SÖNEN BOŞ SLOT TASARIMI (Altın/Kehribar Rengi)
+                kartStili = "bg-amber-500/5 border border-dashed border-amber-500/40 animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.05)]";
+                isimStili = "text-amber-500/80 font-medium italic";
                 butonlarHtml = currentUser 
-                    ? `<button onclick="sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-1 px-2.5 rounded-lg transition shrink-0 cursor-pointer">🎪 Sahne Al</button>`
-                    : `<span class="text-[9px] text-amber-500/60 font-bold">Giriş Yap</span>`;
+                    ? `<button onclick="sahneAl('${gun}', '${saat}')" class="text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black py-1 px-3 rounded-xl transition shadow-md cursor-pointer transform active:scale-95">🎪 Sahne Al</button>`
+                    : `<span class="text-[9px] text-amber-500/50 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">Giriş Yap</span>`;
             } else {
                 if (isOwner) {
-                    kartStili = "bg-emerald-950/20 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]";
-                    butonlarHtml = `<button onclick="slotBiral('${gun}', '${saat}')" class="text-[10px] bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-slate-950 font-medium py-1 px-2 rounded border border-rose-500/30 transition cursor-pointer">🚫 İptal Et</button>`;
-                } else if (currentUser) {
-                    butonlarHtml = `<button onclick="takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[10px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 py-1 px-2 rounded border border-cyan-500/20 transition cursor-pointer">🔄 Takas İste</button>`;
+                    // SANA AİT GRUBUN PARLAYAN NEON YEŞİL KARTI (SİRAYET)
+                    kartStili = "bg-emerald-500/10 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20";
+                    isimStili = "text-emerald-400 font-black drop-shadow-[0_0_10px_rgba(16,185,129,0.3)]";
+                    butonlarHtml = `<button onclick="slotBiral('${gun}', '${saat}')" class="text-[10px] bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-slate-950 font-bold py-1 px-2.5 rounded-lg border border-rose-500/40 transition cursor-pointer shadow-sm">🚫 İptal Et</button>`;
+                } else {
+                    // BAŞKALARININ DOLU SLOTLARI
+                    if (currentUser) {
+                        butonlarHtml = `<button onclick="takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[10px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 py-1 px-2.5 rounded-lg border border-cyan-500/30 transition cursor-pointer shadow-sm font-semibold">🔄 Takas</button>`;
+                    }
                 }
             }
 
+            // Göz Alıcı Etiket Tasarımları
             let etiketHtml = "";
-            if (isHaftaIciSabit && !isBoş) etiketHtml = `<span class="text-[8px] font-bold text-orange-400 bg-orange-500/10 px-1 rounded border border-orange-500/20">🔒 SABİT</span>`;
-            else if (isHaftaSonuYanalDongu && !isBoş) etiketHtml = `<span class="text-[8px] font-bold text-cyan-400 bg-cyan-500/10 px-1 rounded border border-cyan-500/20">🔄 DÖNGÜ</span>`;
-            else if (!isBoş) etiketHtml = `<span class="text-[8px] font-bold text-slate-500 bg-slate-800/40 px-1 rounded">⏳ SLOT</span>`;
+            if (isHaftaIciSabit && !isBoş) etiketHtml = `<span class="text-[8px] font-extrabold text-orange-400 bg-orange-500/20 px-1.5 py-0.5 rounded border border-orange-500/30 shadow-sm">🔒 SABİT</span>`;
+            else if (isHaftaSonuYanalDongu && !isBoş) etiketHtml = `<span class="text-[8px] font-extrabold text-cyan-400 bg-cyan-500/20 px-1.5 py-0.5 rounded border border-cyan-500/30 shadow-sm">🔄 DÖNGÜ</span>`;
+            else if (!isBoş) etiketHtml = `<span class="text-[8px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">⏳ SLOT</span>`;
 
             slotlarHtml += `
-                <div class="p-3 rounded-xl border ${kartStili} flex justify-between items-center gap-3 min-w-[250px]">
+                <div class="p-3.5 rounded-xl border transition-all duration-200 flex justify-between items-center gap-3 min-w-[260px] ${kartStili}">
                     <div>
-                        <span class="text-[10px] font-mono font-bold text-slate-500 block">${saat} ${etiketHtml}</span>
-                        <span class="font-bold text-sm ${isBoş ? 'text-amber-500/70 italic' : 'text-slate-100'}">${isBoş ? 'Müsait (Boş)' : isim}</span>
+                        <span class="text-[10px] font-mono font-bold text-slate-500 block mb-0.5 flex items-center gap-1">${saat} ${etiketHtml}</span>
+                        <span class="text-sm tracking-wide ${isimStili}">${isBoş ? 'Müsait (Boş)' : isim}</span>
                     </div>
                     <div class="shrink-0">${butonlarHtml}</div>
                 </div>`;
         });
 
         programAkisi.innerHTML += `
-            <div class="bg-slate-900 rounded-2xl border border-slate-800 p-4 shadow-lg min-w-[295px] snap-start flex-shrink-0">
-                <div class="border-b border-slate-800 pb-2.5 mb-3 flex justify-between items-center">
-                    <span class="font-bold text-base text-slate-100 flex items-center gap-1.5"><i class="fa-regular fa-calendar text-orange-500 text-sm"></i> ${gun}</span>
+            <div class="bg-slate-900/90 backdrop-blur-sm rounded-2xl border border-slate-800/80 p-4 shadow-xl min-w-[300px] snap-start flex-shrink-0 hover:border-slate-700/50 transition-all duration-300">
+                <div class="border-b border-slate-800 pb-2.5 mb-3.5 flex justify-between items-center">
+                    <span class="font-black text-base text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-300 flex items-center gap-2">
+                        <i class="fa-regular fa-calendar text-orange-500 text-sm"></i> ${gun}
+                    </span>
                 </div>
-                <div class="space-y-2.5">${slotlarHtml}</div>
+                <div class="space-y-3">${slotlarHtml}</div>
             </div>`;
     });
 }
