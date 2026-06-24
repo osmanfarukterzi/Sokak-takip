@@ -1,102 +1,125 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beşiktaş Meydanı - Sokak Müzisyenleri Takvimi</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Beşiktaş Meydan - Canlı Slot Takip Sistemi</title>
+    <!-- Canlı Renkler ve Parlamalar İçin Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome İkonları -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Özel Kaydırma Çubuğu Tasarımı */
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-8 w-full selection:bg-orange-500/30">
+<body class="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 antialiased flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
 
-    <header class="w-full mb-8 grid grid-cols-1 xl:grid-cols-3 items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 gap-6 shadow-2xl">
-        <div class="text-center xl:text-left">
-            <h1 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500 flex items-center justify-center xl:justify-start gap-2">
-                <i class="fa-solid fa-guitar text-orange-500"></i> Beşiktaş Meydanı Takip Sistemi
-            </h1>
-            <p class="text-xs text-slate-400 mt-1">📍 Yer: İstanbul Beşiktaş Meydanı (Resmi Takvim)</p>
-        </div>
-        
-        <div class="text-center bg-slate-950/60 py-3 px-6 rounded-xl border border-orange-500/20 shadow-inner">
-            <span class="block text-[10px] font-bold uppercase tracking-widest text-orange-400/80 mb-0.5">HAFTALIK ÇALIŞMA PLANI</span>
-            <h2 id="dinamik-tarih-basligi" class="text-xl md:text-2xl font-black text-orange-400 tracking-tight">HAFTALIK SLOT TAKVİMİ</h2>
-        </div>
-        
-        <div class="flex flex-col sm:flex-row xl:justify-end items-center gap-4">
-            <div class="bg-slate-950 px-5 py-3 rounded-xl border border-slate-800 flex items-center gap-3 text-sm min-w-[200px] shadow-inner">
-                <i class="fa-solid fa-cloud-sun text-orange-400 text-2xl"></i>
+    <!-- Üst Menü / Navbar -->
+    <header class="border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                    <i class="fa-solid fa-guitar text-slate-950 text-base font-black"></i>
+                </div>
                 <div>
-                    <span class="block font-bold text-slate-200" id="havadurumu-derece">Beşiktaş: --°C</span>
-                    <span class="text-xs text-orange-400 font-medium" id="havadurumu-ozet">Yükleniyor...</span>
+                    <h1 class="font-black text-sm tracking-tight text-white uppercase sm:text-base">Meydan Takip</h1>
+                    <span id="havadurumu-derece" class="text-[10px] text-slate-400 font-medium block -mt-0.5">Yükleniyor...</span>
+                    <span id="havadurumu-ozet" class="hidden"></span>
                 </div>
             </div>
-            <div id="auth-status-area">
-                <button onclick="googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shrink-0 cursor-pointer">
-                    <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
-                    Google ile Giriş Yap
-                </button>
-            </div>
+            
+            <!-- Giriş / Durum Alanı (Parlayan Tasarım) -->
+            <div id="auth-status-area" class="flex items-center gap-2"></div>
         </div>
     </header>
 
-    <main class="w-full grid grid-cols-1 xl:grid-cols-4 gap-8">
+    <!-- Ana İçerik -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        <div class="xl:col-span-1 space-y-6">
-            <div class="bg-slate-900 p-5 rounded-xl border border-cyan-500/30 shadow-md">
-                <h2 class="text-sm font-bold text-cyan-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-bolt animate-pulse"></i> Gelen Takas Talepleri
-                </h2>
-                <div id="canli-takas-talepleri-alani" class="space-y-3">
-                    <p class="text-slate-600 text-[11px] italic text-center py-1">Aktif teklif yükleniyor...</p>
-                </div>
+        <!-- Dinamik Başlık Alanı -->
+        <div class="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xl">
+            <div>
+                <h2 id="dinamik-tarih-basligi" class="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-wide uppercase">SLOT TAKVİMİ</h2>
+                <p class="text-slate-400 text-xs mt-0.5 font-medium flex items-center gap-1">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 
+                    Sistem şu an Beşiktaş Meydanı canlı veritabanına bağlıdır.
+                </p>
             </div>
-
-            <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md">
-                <h2 class="text-sm font-bold text-orange-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-exclamation"></i> Önemli Kurallar
-                </h2>
-                <ul class="text-xs text-slate-400 space-y-2.5 leading-relaxed">
-                    <li>• 1 kişi en fazla 2 çıkmayanın hakkını alabilir.</li>
-                    <li>• Yer değiştirilecekse sistemden takas isteği atılmalıdır.</li>
-                </ul>
-            </div>
-
-            <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md">
-                <h2 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-comments"></i> Müsaitlik & Devir Panosu
-                </h2>
-                <div class="space-y-2.5 mb-4">
-                    <input type="text" id="not-yazan" readonly placeholder="Adınız otomatik gelir..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-400 focus:outline-none">
-                    <textarea id="not-icerik" placeholder="Genel duyuru veya mesaj yazın..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-200 focus:outline-none focus:border-orange-500"></textarea>
-                    <button onclick="notEkle()" class="w-full text-xs bg-orange-600 hover:bg-orange-500 text-slate-950 font-bold py-2 rounded transition shadow-md cursor-pointer">Panoya Bildir</button>
-                </div>
-                <div id="musaidlik-notlari" class="space-y-2 max-h-[180px] overflow-y-auto text-xs pr-1">
-                    <p class="text-slate-600 italic text-center py-2">Yükleniyor...</p>
-                </div>
-            </div>
-
-            <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
-                        <i class="fa-solid fa-users"></i> Kayıtlı Müzisyenler
-                    </h2>
-                    <span id="aktif-uye-sayisi" class="bg-cyan-500/10 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-mono">0 Aktif</span>
-                </div>
-                <div id="muzisyen-listesi-alan" class="grid grid-cols-1 gap-2 max-h-[180px] overflow-y-auto pr-1 text-xs">
-                    <p class="text-slate-600 italic text-center py-2">Yükleniyor...</p>
-                </div>
-            </div>
+            <div id="aktif-uye-sayisi" class="text-[11px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-xl shadow-inner">0 Aktif</div>
         </div>
 
-        <div class="xl:col-span-3">
-            <div class="flex flex-row gap-4 overflow-x-auto pb-4 snap-x" id="program-akisi"></div>
-        </div>
+        <!-- YAN YANA KAYAN GÖZ ALICI SLOT ÇİZELGESİ -->
+        <section class="relative">
+            <!-- Sol ve Sağ Gölge Göstergeleri -->
+            <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10 hidden md:block"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10 hidden md:block"></div>
+            
+            <div id="program-akisi" class="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth outline-none">
+                <!-- JavaScript tarafından parlayan kartlar buraya çizilecek -->
+                <div class="text-center text-slate-500 text-xs w-full py-8 italic">Takvim verileri yükleniyor, lütfen bekleyin...</div>
+            </div>
+        </section>
 
+        <!-- Alt Panel: Canlı Takas ve Bildirim Panosu -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Canlı Takas Teklifleri Alanı -->
+            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
+                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-right-left text-cyan-400 text-xs"></i>
+                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Canlı Takas İstekleri</h3>
+                </div>
+                <div id="canli-takas-talepleri-alani" class="flex-1 overflow-y-auto space-y-2">
+                    <p class="text-slate-600 text-[11px] italic text-center py-4">Aktif takas teklifi yok.</p>
+                </div>
+            </div>
+
+            <!-- Bildirim ve Müsaidlik Panosu -->
+            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
+                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-regular fa-comment-dots text-orange-400 text-xs"></i>
+                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Meydan Pano / Bildirimler</h3>
+                </div>
+                <div id="musaidlik-notlari" class="flex-1 overflow-y-auto space-y-2 mb-3">
+                    <p class="text-slate-600 text-center italic text-[11px] py-4">Pano yükleniyor...</p>
+                </div>
+                <div class="flex gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/80 shrink-0">
+                    <input type="hidden" id="not-yazan">
+                    <input type="text" id="not-icerik" placeholder="Duyuru veya mesaj yazın..." class="flex-1 bg-transparent border-0 text-xs px-2.5 text-white placeholder-slate-500 focus:outline-none">
+                    <button onclick="notEkle()" class="bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg transition cursor-pointer">Yaz</button>
+                </div>
+            </div>
+
+            <!-- Aktif Müzisyen Listesi -->
+            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
+                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-emerald-400 text-xs"></i>
+                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Meydan Müzisyenleri</h3>
+                </div>
+                <div id="muzisyen-listesi-alan" class="flex-1 overflow-y-auto space-y-2">
+                    <p class="text-slate-600 text-center italic text-[11px] py-4">Müzisyen listesi yükleniyor...</p>
+                </div>
+            </div>
+
+        </section>
     </main>
 
+    <!-- Firebase Kütüphaneleri -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    
+    <!-- Senin app.js dosyan -->
     <script src="app.js"></script>
 </body>
 </html>
