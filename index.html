@@ -6,8 +6,10 @@
     <title>Beşiktaş Meydanı - Sokak Müzisyenleri Takvimi</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Resmi Google Giriş Kütüphanesi -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-8 selection:bg-orange-500/30 w-full">
 
@@ -27,16 +29,15 @@
         </div>
         
         <div class="flex flex-col sm:flex-row xl:justify-end items-center gap-4">
-            <div id="hava-durumu-alani" class="bg-slate-950 px-5 py-3 rounded-xl border border-slate-800 flex items-center gap-3 text-sm min-w-[200px] shadow-inner">
-                <i class="fa-solid fa-cloud-sun text-orange-400 text-2xl animate-pulse"></i>
+            <div class="bg-slate-950 px-5 py-3 rounded-xl border border-slate-800 flex items-center gap-3 text-sm min-w-[200px] shadow-inner">
+                <i class="fa-solid fa-cloud-sun text-orange-400 text-2xl"></i>
                 <div>
                     <span class="block font-bold text-slate-200" id="havadurumu-derece">Beşiktaş: 26°C</span>
                     <span class="text-xs text-orange-400 font-medium" id="havadurumu-ozet">Hava Açık</span>
                 </div>
             </div>
             
-            <!-- Canlı Google Buton Alanı -->
-            <div id="google-btn-container">
+            <div id="auth-status-area">
                 <button onclick="googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shrink-0 cursor-pointer">
                     <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
                     Google ile Giriş Yap
@@ -63,24 +64,24 @@
                     <i class="fa-solid fa-comments"></i> Müsaitlik & Devir Panosu
                 </h2>
                 <div class="space-y-2.5 mb-4">
-                    <input type="text" id="not-yazan" placeholder="İsminiz..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
-                    <textarea id="not-icerik" placeholder="Örn: Ben Osman, Çarşamba gelemiyorum..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-200 focus:outline-none focus:border-orange-500"></textarea>
+                    <input type="text" id="not-yazan" readonly placeholder="Giriş yapınca adınız otomatik gelir..." class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-400 focus:outline-none">
+                    <textarea id="not-icerik" placeholder="Örn: Çarşamba günü sahnemi devrediyorum..." rows="2" class="w-full text-xs bg-slate-950 border border-slate-800 rounded p-2.5 text-slate-200 focus:outline-none focus:border-orange-500"></textarea>
                     <button onclick="notEkle()" class="w-full text-xs bg-orange-600 hover:bg-orange-500 text-slate-950 font-bold py-2 rounded transition shadow-md cursor-pointer">Panoya Bildir</button>
                 </div>
-                <div id="musaidlik-notlari" class="space-y-2 max-h-[200px] overflow-y-auto text-xs pr-1"></div>
+                <div id="musaidlik-notlari" class="space-y-2 max-h-[200px] overflow-y-auto text-xs pr-1">
+                    <p class="text-slate-600 italic text-center py-2">Notlar yükleniyor...</p>
+                </div>
             </div>
 
-            <!-- CANLI MÜZİSYEN LİSTESİ -->
             <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
-                        <i class="fa-solid fa-users"></i> Giriş Yapan Müzisyenler
+                        <i class="fa-solid fa-users"></i> Kayıtlı Müzisyenler
                     </h2>
                     <span id="aktif-uye-sayisi" class="bg-cyan-500/10 text-cyan-400 text-[10px] px-2 py-0.5 rounded-full font-mono">0 Aktif</span>
                 </div>
-                
                 <div id="muzisyen-listesi-alan" class="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1 text-xs">
-                    <!-- Giriş yapanlar buraya listelenecek -->
+                    <p class="text-slate-600 italic text-center py-2">Müzisyenler yükleniyor...</p>
                 </div>
             </div>
         </div>
