@@ -3,113 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sokak Takip - Haftalık Program</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Sokak Takip Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+<body class="bg-slate-950 text-white p-6 font-sans">
 
-    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-                <i class="fa-solid fa-guitar"></i> Sokak Takip Projesi
-            </h1>
-            <div id="user-status" class="text-sm bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600">
-                <i class="fa-solid fa-user-check text-emerald-400"></i> Sistem Aktif
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold text-emerald-400 mb-6 text-center">🎸 Sokak Takip Canlı Programı</h1>
         
-        <div class="lg:col-span-1 space-y-6">
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-bold text-amber-400 mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-exclamation"></i> Önemli Kurallar
-                </h2>
-                <ul class="space-y-3 text-sm text-slate-300">
-                    <li class="flex gap-2"><span class="text-amber-400 font-bold">•</span> En fazla 2 çıkmayanın hakkı alınabilir. 3.sünde sorulmalı!</li>
-                    <li class="flex gap-2"><span class="text-amber-400 font-bold">•</span> Slot değişimi için önce özelden sorulmalıdır.</li>
-                    <li class="flex gap-2"><span class="text-amber-400 font-bold">•</span> Haftada 1 slotu olanlar boş slotlarda önceliklidir.</li>
-                </ul>
-            </div>
-
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-bold text-emerald-400 mb-4 border-b border-slate-700 pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-users"></i> Slot Dağılımı
-                </h2>
-                <div class="space-y-2 text-sm" id="muzisyen-listesi">
-                    <div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-slate-300">Berkhan / Sirayet / Eren</span><span class="font-bold text-emerald-400">3 Slot</span></div>
-                    <div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-slate-300">Samet / İsmet / Raşit</span><span class="font-bold text-emerald-400">3 Slot</span></div>
-                    <div class="flex justify-between border-b border-slate-700/50 py-1"><span class="text-slate-300">Nebi / Uğur / Doğa / Yimami</span><span class="font-bold text-emerald-400">2 Slot</span></div>
-                    <div class="flex justify-between py-1"><span class="text-slate-300">Faruk / Enes</span><span class="font-bold text-emerald-400">1 Slot</span></div>
-                </div>
-            </div>
+        <div id="program-akisi" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p class="text-slate-400 text-center col-span-2">Sistem yükleniyor, lütfen bekleyin...</p>
         </div>
+    </div>
 
-        <div class="lg:col-span-3 space-y-6">
-            <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-days text-emerald-400"></i> Haftalık Çalışma Slotları
-                </h2>
-                <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full border border-emerald-500/20 font-mono">Dinamik Döngü</span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="program-akisi">
-                <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-md overflow-hidden">
-                    <div class="bg-slate-700/50 px-4 py-2.5 font-bold text-slate-200 border-b border-slate-700 flex justify-between items-center">
-                        <span>Pazartesi</span>
-                        <span class="text-xs text-slate-400 font-normal">Hafta İçi Rotasyonu</span>
-                    </div>
-                    <div class="p-4 space-y-3">
-                        <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60 flex justify-between items-center">
-                            <div>
-                                <span class="text-xs font-mono text-amber-400 block">12.00-15.30</span>
-                                <span class="font-semibold text-slate-200">Sirayet</span>
-                            </div>
-                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">Dolu</span>
-                        </div>
-                        <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60 flex justify-between items-center">
-                            <div>
-                                <span class="text-xs font-mono text-amber-400 block">15.30-18.00 / 18.00-20.30</span>
-                                <span class="font-semibold text-slate-200">Berkhan / Eren</span>
-                            </div>
-                            <button class="text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 px-2 py-1 rounded border border-amber-500/30 transition">Çıkamıyorum</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-slate-800 rounded-xl border border-amber-500/20 shadow-md overflow-hidden">
-                    <div class="bg-amber-500/10 px-4 py-2.5 font-bold text-amber-400 border-b border-amber-500/20 flex justify-between items-center">
-                        <span>Cumartesi</span>
-                        <span class="text-xs bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 font-normal">Sabit Hafta Sonu</span>
-                    </div>
-                    <div class="p-4 space-y-3">
-                        <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60 flex justify-between items-center">
-                            <div>
-                                <span class="text-xs font-mono text-amber-400 block">12.00-15.30</span>
-                                <span class="font-semibold text-slate-200">Doğa</span>
-                            </div>
-                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">Dolu</span>
-                        </div>
-                        <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60 flex justify-between items-center">
-                            <div>
-                                <span class="text-xs font-mono text-amber-400 block">15.30-20.30</span>
-                                <span class="font-semibold text-slate-200">Sirayet / Faruk</span>
-                            </div>
-                            <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">Dolu</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <footer class="text-center py-8 text-xs text-slate-500 border-t border-slate-800 mt-12">
-        Sokak Takip Otomasyon Sistemi &copy; 2026
-    </footer>
-
+    <script src="app.js"></script>
 </body>
 </html>
