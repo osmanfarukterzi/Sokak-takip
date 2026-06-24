@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
     CanliVerileriDinle();
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
+    
+    // ⚡ CANLI SAYAÇ MOTORUNU BAŞLAT ⚡
+    setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
     auth.onAuthStateChanged(user => {
         const authArea = document.getElementById("auth-status-area");
@@ -77,7 +80,85 @@ function VeritabaniniKontrolEtVeDinle() {
         }
         mevcutSlotlar = veriler;
         ProgramiCiz(veriler);
+        CanliSahneVeGeriSayimMotoru();
     });
+}
+
+// ⏱️ SİHİRLİ CANLI GERİ SAYIM VE SAHNE MOTORU KODU
+function CanliSahneVeGeriSayimMotoru() {
+    const sahneYazi = document.getElementById("su-an-sahnede-kim-var");
+    const sayacYazi = document.getElementById("canli-geri-sayim");
+    const sayacEtiket = document.getElementById("sayac-etiket");
+    const canliIsik = document.getElementById("canli-isik");
+    const tabela = document.getElementById("canli-sahne-tabelasi");
+
+    if (!sahneYazi || !sayacYazi) return;
+
+    const simdi = new Date();
+    const gunlerIngilizce = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    const bugunTr = gunlerIngilizce[simdi.getDay()];
+    
+    const saat = simdi.getHours();
+    const dakika = simdi.getMinutes();
+    const saniye = simdi.getSeconds();
+    const toplamGecenSaniye = (saat * 3600) + (dakika * 60) + saniye;
+
+    let aktifSlot = null;
+    let bitisSaati = 0;
+
+    if (saat >= 12 && saat < 15) { aktifSlot = "12.00-15.00"; bitisSaati = 15; }
+    else if (saat >= 15 && saat < 18) { aktifSlot = "15.00-18.00"; bitisSaati = 18; }
+    else if (saat >= 18 && saat < 21) { aktifSlot = "18.00-21.00"; bitisSaati = 21; }
+    else if (saat >= 21 && saat < 24) { aktifSlot = "21.00-24.00"; bitisSaati = 24; }
+
+    if (aktifSlot && mevcutSlotlar[bugunTr] && mevcutSlotlar[bugunTr][aktifSlot]) {
+        const kiminSahnep = mevcutSlotlar[bugunTr][aktifSlot];
+        
+        if (kiminSahnep === "BOŞ" || kiminSahnep === "") {
+            sahneYazi.innerText = "MEYDAN BOŞ / REZERVE EDİLEBİLİR";
+            sahneYazi.className = "text-2xl font-black text-emerald-400 tracking-wide";
+            if(canliIsik) canliIsik.className = "w-3 h-3 bg-emerald-500 rounded-full animate-ping shadow-[0_0_10px_#10b981] shrink-0";
+            if(tabela) tabela.style.borderColor = "rgba(16, 185, 129, 0.3)";
+        } else {
+            sahneYazi.innerText = kiminSahnep.toUpperCase();
+            sahneYazi.className = "text-2xl font-black text-white tracking-wide animate-pulse";
+            if(canliIsik) canliIsik.className = "w-3 h-3 bg-red-500 rounded-full animate-ping shadow-[0_0_10px_#ef4444] shrink-0";
+            if(tabela) tabela.style.borderColor = "rgba(249, 115, 22, 0.3)";
+        }
+
+        // Kalan Süreyi Hesapla
+        const toplamBitisSaniye = bitisSaats = bitisSaati * 3600;
+        let kalanSaniye = toplamBitisSaniye - toplamGecenSaniye;
+
+        const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
+        const m = Math.floor((kalanSaniye % 3600) / 60).toString().padStart(2, '0');
+        const s = (kalanSaniye % 60).toString().padStart(2, '0');
+
+        sayacYazi.innerText = `${h}:${m}:${s}`;
+        sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
+    } else {
+        // Saat 00:00 ile 12:00 arasındaysa (Meydan kapalı / resmi slot yoksa)
+        sahneYazi.innerText = "MEYDAN RESMİ PROGRAMI DIŞI HOURS";
+        sahneYazi.className = "text-xl font-black text-slate-500 tracking-wide";
+        if(canliIsik) canliIsik.className = "w-3 h-3 bg-slate-700 rounded-full shrink-0";
+        if(tabela) tabela.style.borderColor = "rgba(51, 65, 85, 0.2)";
+
+        // Saat 12:00'ye ne kadar kaldığını hesapla
+        let sonrakiHedef = 12 * 3600;
+        let kalanSaniye = 0;
+        if (saat >= 0 && saat < 12) {
+            kalanSaniye = sonrakiHedef - toplamGecenSaniye;
+        } else {
+            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrakiHedef;
+        }
+
+        const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
+        const m = Math.floor((kalanSaniye % 3600) / 60).toString().padStart(2, '0');
+        const s = (kalanSaniye % 60).toString().padStart(2, '0');
+
+        sayacYazi.innerText = `${h}:${m}:${s}`;
+        sayacEtiket.innerText = "İlk Slotun Başlamasına Kalan";
+    }
 }
 
 function ProgramiCiz(veri) {
@@ -205,7 +286,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     alert("Takas isteği panoya gönderildi, onay bekleniyor!");
 }
 
-// 🚀 CANLI VE OTOMATİK TAKAS SİSTEMİ MOTORU
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const alani = document.getElementById("canli-takas-talepleri-alani");
@@ -228,7 +308,6 @@ function CanliTakaslariDinle() {
             const isImTarget = benimSahneIsmim.includes(targetName) || targetName.includes(benimSahneIsmim);
 
             if(isImTarget) {
-                // Bana gelen istek: Kabul/Ret Butonları Göster
                 alani.innerHTML += `
                     <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md animate-pulse">
                         <p class="text-slate-200 leading-relaxed">
@@ -240,7 +319,6 @@ function CanliTakaslariDinle() {
                         </div>
                     </div>`;
             } else {
-                // Diğer herksin gördüğü düz bilgi metni
                 alani.innerHTML += `
                     <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 text-slate-400 text-[11px]">
                         <i class="fa-solid fa-spinner animate-spin text-cyan-500 mr-1"></i> 
@@ -253,7 +331,6 @@ function CanliTakaslariDinle() {
     });
 }
 
-// TAKAS KABUL EDİLDİĞİNDE VERİLERİ ANLIK OLARAK TAKAS EDEN SİHRALİ KOD
 function takasOnayla(talepKey) {
     db.ref(`takas_talepleri/${talepKey}`).once("value", snapshot => {
         const req = snapshot.val();
