@@ -1,125 +1,293 @@
 <!DOCTYPE html>
-<html lang="tr" class="h-full bg-slate-950 text-slate-100">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beşiktaş Meydan - Canlı Slot Takip Sistemi</title>
-    <!-- Canlı Renkler ve Parlamalar İçin Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome İkonları -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        /* Özel Kaydırma Çubuğu Tasarımı */
-        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #020617 0%, #0f172a 50%, #020617 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Üst Menü */
+        header {
+            border-b: 1px solid rgba(51, 65, 85, 0.5);
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding: 0 20px;
+        }
+        .nav-container {
+            max-w: 1200px;
+            margin: 0 auto;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+            color: #020617;
+            font-weight: 900;
+        }
+        .brand-title { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .weather-text { font-size: 11px; color: #94a3b8; display: block; margin-top: -2px; }
+        
+        /* Giriş Alanı */
+        .auth-box {
+            background: #020617;
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        .auth-box img { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #10b981; }
+        .logout-btn { color: #f43f5e; font-size: 10px; margin-left: 8px; background: none; border: none; cursor: pointer; font-weight: bold; }
+        .login-btn {
+            background: linear-gradient(90deg, #f97316, #f59e0b);
+            color: #020617;
+            font-weight: 800;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
+        }
+
+        /* Ana İçerik */
+        main { max-w: 1200px; width: 100%; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
+        
+        /* Bilgi Başlığı */
+        .info-panel {
+            background: linear-gradient(90deg, #0f172a, #020617, #0f172a);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .info-title { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; color: #fff; text-transform: uppercase; }
+        .info-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+        .live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        .member-count { font-size: 11px; font-weight: bold; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 6px 12px; border-radius: 10px; }
+
+        /* YAN YANA SIRALANAN SİSTEM (İŞTE BURASI DÜZELDİ) */
+        .grid-flow-x {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            scroll-snap-type: x mandatory;
+        }
+        .day-column {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+            border-radius: 16px;
+            padding: 16px;
+            min-width: 300px;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .day-column:hover { border-color: rgba(148, 163, 184, 0.3); }
+        .day-header { font-size: 15px; font-weight: 800; color: #fff; border-bottom: 1px solid #1e293b; padding-bottom: 10px; mb: 14px; display: flex; align-items: center; gap: 8px; }
+        .day-header i { color: #f97316; }
+        .slots-container { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+        /* SLOT KARTLARI VE EFSANE RENKLER */
+        .slot-card {
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+            background: rgba(2, 6, 23, 0.8);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .slot-time { font-family: monospace; font-size: 10px; font-weight: bold; color: #64748b; display: block; margin-bottom: 2px; }
+        .slot-name { font-size: 14px; font-weight: bold; color: #e2e8f0; }
+        
+        /* BOŞ SLOT - PARLAYAN ALTIN REZERVE SİSTEMİ */
+        .slot-empty {
+            background: rgba(245, 158, 11, 0.03);
+            border: 1px dashed rgba(245, 158, 11, 0.4);
+            animation: pulse-border 2s infinite;
+        }
+        .slot-empty .slot-name { color: rgba(245, 158, 11, 0.7); font-style: italic; font-weight: 500; }
+        .btn-sahne {
+            background: linear-gradient(90deg, #f59e0b, #f97316);
+            color: #020617;
+            font-weight: 800;
+            font-size: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(245,158,11,0.2);
+        }
+
+        /* SENİN GRUBUN - SİRAYET NEON YEŞİL PARLAMA KARTI */
+        .slot-owner {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.6);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+        }
+        .slot-owner .slot-name { color: #10b981; font-weight: 900; text-shadow: 0 0 8px rgba(16,185,129,0.3); }
+        .btn-iptal {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid rgba(244, 63, 94, 0.4);
+            color: #fca5a5;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-iptal:hover { background: #f43f5e; color: #020617; }
+        .btn-takas {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #22d3ee;
+            font-size: 10px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-takas:hover { background: #06b6d4; color: #020617; }
+
+        /* Etiketler */
+        .badge { font-size: 8px; font-weight: 800; padding: 2px 6px; rounded-border: 4px; border-radius: 4px; margin-left: 4px; display: inline-block; }
+        .badge-sabit { color: #fb923c; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3); }
+        .badge-dongu { color: #22d3ee; background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.3); }
+        .badge-normal { color: #94a3b8; background: #1e293b; }
+
+        /* Alt Paneller */
+        .bottom-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .panel-box { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.5); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; height: 280px; }
+        .panel-header { border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #cbd5e1; }
+        .panel-header i { font-size: 14px; }
+        .panel-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Pano Giriş Alanı */
+        .pano-input-area { display: flex; gap: 8px; background: #020617; padding: 4px; border-radius: 12px; border: 1px solid #1e293b; margin-top: 10px; }
+        .pano-input { flex: 1; background: transparent; border: none; font-size: 12px; padding: 6px 10px; color: #fff; outline: none; }
+        .pano-btn { background: #f97316; color: #020617; font-weight: bold; border: none; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+
+        /* İkincil Kart Tasarımları */
+        .sub-card { background: #020617; p: 10px; padding: 10px; border-radius: 8px; border: 1px solid rgba(30, 41, 59, 0.5); font-size: 12px; position: relative; }
+        .sub-card strong { color: #f97316; display: block; margin-bottom: 2px; }
+        .sub-card p { color: #cbd5e1; }
+        .sub-card-delete { position: absolute; top: 4px; right: 8px; color: #f43f5e; font-size: 10px; cursor: pointer; background: none; border: none; }
+        
+        .user-row { display: flex; align-items: center; gap: 8px; background: rgba(2, 6, 23, 0.4); padding: 8px; border-radius: 8px; border: 1px solid #1e293b; font-size: 13px; font-weight: bold; }
+        .user-row img { width: 24px; height: 24px; border-radius: 50%; }
+
+        /* Animasyonlar */
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+        @keyframes pulse-border { 0%, 100% { border-color: rgba(245, 158, 11, 0.4); } 50% { border-color: rgba(245, 158, 11, 0.1); } }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 antialiased flex flex-col selection:bg-emerald-500/30 selection:text-emerald-200">
+<body>
 
-    <!-- Üst Menü / Navbar -->
-    <header class="border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50 transition-all">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-                    <i class="fa-solid fa-guitar text-slate-950 text-base font-black"></i>
-                </div>
+    <header>
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-guitar"></i></div>
                 <div>
-                    <h1 class="font-black text-sm tracking-tight text-white uppercase sm:text-base">Meydan Takip</h1>
-                    <span id="havadurumu-derece" class="text-[10px] text-slate-400 font-medium block -mt-0.5">Yükleniyor...</span>
-                    <span id="havadurumu-ozet" class="hidden"></span>
+                    <h1 class="brand-title">Meydan Takip</h1>
+                    <span id="havadurumu-derece" class="weather-text">Yükleniyor...</span>
+                    <span id="havadurumu-ozet" style="display: none;"></span>
                 </div>
             </div>
-            
-            <!-- Giriş / Durum Alanı (Parlayan Tasarım) -->
-            <div id="auth-status-area" class="flex items-center gap-2"></div>
+            <div id="auth-status-area"></div>
         </div>
     </header>
 
-    <!-- Ana İçerik -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        <!-- Dinamik Başlık Alanı -->
-        <div class="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xl">
+    <main>
+        <div class="info-panel">
             <div>
-                <h2 id="dinamik-tarih-basligi" class="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-wide uppercase">SLOT TAKVİMİ</h2>
-                <p class="text-slate-400 text-xs mt-0.5 font-medium flex items-center gap-1">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 
-                    Sistem şu an Beşiktaş Meydanı canlı veritabanına bağlıdır.
-                </p>
+                <h2 id="dinamik-tarih-basligi" class="info-title">SLOT TAKVİMİ</h2>
+                <p class="info-sub"><span class="live-dot"></span> Beşiktaş Meydanı canlı veritabanı aktif.</p>
             </div>
-            <div id="aktif-uye-sayisi" class="text-[11px] font-bold text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-xl shadow-inner">0 Aktif</div>
+            <div id="aktif-uye-sayisi" class="member-count">0 Aktif</div>
         </div>
 
-        <!-- YAN YANA KAYAN GÖZ ALICI SLOT ÇİZELGESİ -->
-        <section class="relative">
-            <!-- Sol ve Sağ Gölge Göstergeleri -->
-            <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none z-10 hidden md:block"></div>
-            <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10 hidden md:block"></div>
-            
-            <div id="program-akisi" class="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth outline-none">
-                <!-- JavaScript tarafından parlayan kartlar buraya çizilecek -->
-                <div class="text-center text-slate-500 text-xs w-full py-8 italic">Takvim verileri yükleniyor, lütfen bekleyin...</div>
-            </div>
-        </section>
+        <div id="program-akisi" class="grid-flow-x">
+            <div style="text-align: center; width: 100%; padding: 40px; color: #64748b; font-style: italic;">Takvim verileri yükleniyor...</div>
+        </div>
 
-        <!-- Alt Panel: Canlı Takas ve Bildirim Panosu -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Canlı Takas Teklifleri Alanı -->
-            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
-                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-right-left text-cyan-400 text-xs"></i>
-                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Canlı Takas İstekleri</h3>
-                </div>
-                <div id="canli-takas-talepleri-alani" class="flex-1 overflow-y-auto space-y-2">
-                    <p class="text-slate-600 text-[11px] italic text-center py-4">Aktif takas teklifi yok.</p>
+        <div class="bottom-panels">
+            <div class="panel-box">
+                <div class="panel-header"><i class="fa-solid fa-right-left" style="color: #22d3ee;"></i> Canlı Takas İstekleri</div>
+                <div id="canli-takas-talepleri-alani" class="panel-content">
+                    <p style="color: #475569; font-style: italic; font-size: 11px; text-align: center; padding-top: 20px;">Aktif takas teklifi yok.</p>
                 </div>
             </div>
 
-            <!-- Bildirim ve Müsaidlik Panosu -->
-            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
-                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
-                    <i class="fa-regular fa-comment-dots text-orange-400 text-xs"></i>
-                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Meydan Pano / Bildirimler</h3>
+            <div class="panel-box">
+                <div class="panel-header"><i class="fa-regular fa-comment-dots" style="color: #f97316;"></i> Meydan Pano / Bildirimler</div>
+                <div id="musaidlik-notlari" class="panel-content">
+                    <p style="color: #475569; font-style: italic; font-size: 11px; text-align: center; padding-top: 20px;">Pano yükleniyor...</p>
                 </div>
-                <div id="musaidlik-notlari" class="flex-1 overflow-y-auto space-y-2 mb-3">
-                    <p class="text-slate-600 text-center italic text-[11px] py-4">Pano yükleniyor...</p>
-                </div>
-                <div class="flex gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/80 shrink-0">
+                <div class="pano-input-area">
                     <input type="hidden" id="not-yazan">
-                    <input type="text" id="not-icerik" placeholder="Duyuru veya mesaj yazın..." class="flex-1 bg-transparent border-0 text-xs px-2.5 text-white placeholder-slate-500 focus:outline-none">
-                    <button onclick="notEkle()" class="bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg transition cursor-pointer">Yaz</button>
+                    <input type="text" id="not-icerik" placeholder="Duyuru yazın..." class="pano-input">
+                    <button onclick="notEkle()" class="pano-btn">Yaz</button>
                 </div>
             </div>
 
-            <!-- Aktif Müzisyen Listesi -->
-            <div class="bg-slate-900/60 backdrop-blur-sm border border-slate-800/80 rounded-2xl p-4 shadow-lg flex flex-col h-[300px]">
-                <div class="border-b border-slate-800 pb-2 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-users text-emerald-400 text-xs"></i>
-                    <h3 class="font-bold text-xs tracking-wider uppercase text-slate-200">Meydan Müzisyenleri</h3>
-                </div>
-                <div id="muzisyen-listesi-alan" class="flex-1 overflow-y-auto space-y-2">
-                    <p class="text-slate-600 text-center italic text-[11px] py-4">Müzisyen listesi yükleniyor...</p>
+            <div class="panel-box">
+                <div class="panel-header"><i class="fa-solid fa-users" style="color: #10b981;"></i> Meydan Müzisyenleri</div>
+                <div id="muzisyen-listesi-alan" class="panel-content">
+                    <p style="color: #475569; font-style: italic; font-size: 11px; text-align: center; padding-top: 20px;">Yükleniyor...</p>
                 </div>
             </div>
-
-        </section>
+        </div>
     </main>
 
-    <!-- Firebase Kütüphaneleri -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     
-    <!-- Senin app.js dosyan -->
     <script src="app.js"></script>
 </body>
 </html>
