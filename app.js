@@ -1,6 +1,6 @@
 // KESİN ÇÖZÜM: DOĞRUDAN SUPABASE BİLGİLERİNİ KODA GÖMÜYORUZ
 const SUPABASE_URL = "https://osmanfarukterzi.supabase.co"; // Sizin gerçek urlniz bu değilse birazdan güncelleyeceğiz
-const SUPABASE_KEY = "BURAYA_EKRANDA_GÖRDÜĞÜNÜZ_sb_publishable_İLE_BAŞLAYAN_UPUZUN_ANAHTARI_YAPIŞTIRIN";
+const SUPABASE_KEY = "sb_publishable_YfVKoPw50KOhEJpKhR1f2A_-T9w5TXc";
 
 // Supabase'i başlatıyoruz
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
