@@ -26,7 +26,6 @@ const varsayilanProgram = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    TarihiOtomatikGuncelle();
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
@@ -81,7 +80,6 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-// İLK FOTOĞRAFTAKİ GENİŞ VE PARLAYAN TASARIMI BİREBİR OLUŞTURAN YER
 function ProgramiCiz(veri) {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
@@ -168,9 +166,9 @@ function sahneAl(gun, saat) {
 }
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
-    let benimSlotlarim = [];
     if(!currentUser) return;
     let userGroupKey = currentUser.displayName.toLowerCase();
+    let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(g => {
         if(mevcutSlotlar[g]) {
@@ -183,34 +181,103 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         }
     });
 
-    if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif slotunuz yok!"); return; }
-    let metin = "Takas etmek istediğiniz slotunuzu seçin:\n\n";
+    if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif bir slotunuz bulunmuyor!"); return; }
+    
+    let metin = "Hangi slotunuzu vermek istiyorsunuz?\n\n";
     benimSlotlarim.forEach((item, idx) => { metin += `${idx + 1}) ${item.gun} - ${item.saat}\n`; });
     let secim = prompt(metin);
     let idx = parseInt(secim) - 1;
     if(isNaN(idx) || idx < 0 || idx >= benimSlotlarim.length) return;
 
     let bSlot = benimSlotlarim[idx];
+    let benimGrupIsmım = userGroupKey.includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
+
     db.ref("takas_talepleri").push().set({
-        gonderenUid: currentUser.uid, gonderenIsim: userGroupKey.includes("osman faruk") ? "Sirayet" : currentUser.displayName,
-        gonderenGun: bSlot.gun, gonderenSaat: bSlot.saat, aliciIsim: karsiMuzisyen, aliciGun: karsiGun, aliciSaat: karsiSaat, durum: "beklemede"
+        gonderenUid: currentUser.uid,
+        gonderenIsim: benimGrupIsmım,
+        gonderenGun: bSlot.gun,
+        gonderenSaat: bSlot.saat,
+        aliciIsim: karsiMuzisyen,
+        aliciGun: karsiGun,
+        aliciSaat: karsiSaat,
+        durum: "beklemede"
     });
+    alert("Takas isteği panoya gönderildi, onay bekleniyor!");
 }
 
+// 🚀 CANLI VE OTOMATİK TAKAS SİSTEMİ MOTORU
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const alani = document.getElementById("canli-takas-talepleri-alani");
-        if (!alani) return; alani.innerHTML = "";
+        if (!alani) return; 
+        alani.innerHTML = "";
+        
         const t = snapshot.val();
-        if(!t) { alani.innerHTML = `<p class="text-slate-500 italic text-[11px] text-center py-2">Aktif takas teklifi yok.</p>`; return; }
-        Object.keys(t).forEach(k => {
-            if(t[k].durum !== "beklemede") return;
-            alani.innerHTML += `<div class="bg-[#050b18] p-2 rounded-xl border border-slate-800 text-[11px] text-slate-300"><strong>${t[k].gonderenIsim}</strong> takas istiyor.</div>`;
+        if(!t) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4">Aktif takas teklifi yok.</p>`; return; }
+        
+        let talepVarmi = false;
+        let userGroupKey = currentUser && currentUser.displayName ? currentUser.displayName.toLowerCase() : "";
+        let benimSahneIsmim = userGroupKey.includes("osman faruk") ? "sirayet" : userGroupKey;
+
+        Object.keys(t).forEach(key => {
+            const req = t[key];
+            if(req.durum !== "beklemede") return;
+            talepVarmi = true;
+
+            const targetName = req.aliciIsim.toLowerCase();
+            const isImTarget = benimSahneIsmim.includes(targetName) || targetName.includes(benimSahneIsmim);
+
+            if(isImTarget) {
+                // Bana gelen istek: Kabul/Ret Butonları Göster
+                alani.innerHTML += `
+                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md animate-pulse">
+                        <p class="text-slate-200 leading-relaxed">
+                            <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunu, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotuyla değiştirmek istiyor.
+                        </p>
+                        <div class="flex gap-2 pt-1">
+                            <button onclick="takasOnayla('${key}')" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1 rounded transition text-[10px] cursor-pointer">Kabul Et</button>
+                            <button onclick="takasReddet('${key}')" class="flex-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold py-1 rounded transition text-[10px] cursor-pointer">Reddet</button>
+                        </div>
+                    </div>`;
+            } else {
+                // Diğer herksin gördüğü düz bilgi metni
+                alani.innerHTML += `
+                    <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 text-slate-400 text-[11px]">
+                        <i class="fa-solid fa-spinner animate-spin text-cyan-500 mr-1"></i> 
+                        <span class="text-slate-300 font-bold">${req.gonderenIsim}</span> ➔ <span class="text-slate-300 font-bold">${req.aliciIsim}</span> takas teklifi değerlendiriliyor.
+                    </div>`;
+            }
+        });
+
+        if(!talepVarmi) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4">Aktif takas teklifi yok.</p>`; }
+    });
+}
+
+// TAKAS KABUL EDİLDİĞİNDE VERİLERİ ANLIK OLARAK TAKAS EDEN SİHRALİ KOD
+function takasOnayla(talepKey) {
+    db.ref(`takas_talepleri/${talepKey}`).once("value", snapshot => {
+        const req = snapshot.val();
+        if(!req) return;
+
+        let guncelleme = {};
+        guncelleme[`haftalik_slotlar/${req.gonderenGun}/${req.gonderenSaat}`] = req.aliciIsim;
+        guncelleme[`haftalik_slotlar/${req.aliciGun}/${req.aliciSaat}`] = req.gonderenIsim;
+        guncelleme[`takas_talepleri/${talepKey}/durum`] = "onaylandi";
+
+        db.ref().update(guncelleme).then(() => {
+            db.ref("notlar").push({
+                uid: "sistem",
+                isim: "🔄 TAKAS BAŞARILI",
+                mesaj: `${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini karşılıklı olarak başarıyla takas etti!`
+            });
         });
     });
 }
 
-function TarihiOtomatikGuncelle() {}
+function takasReddet(talepKey) {
+    db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi");
+}
+
 function googleGirisYap() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function cikisYap() { auth.signOut(); }
 
@@ -223,7 +290,7 @@ function CanliVerileriDinle() {
         Object.keys(veriler).reverse().forEach(key => {
             const item = veriler[key];
             pano.innerHTML += `
-                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 relative">
+                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80">
                     <span class="font-bold text-orange-400 block mb-0.5">${item.isim}:</span>
                     <p class="text-slate-300 pr-4">${item.mesaj}</p>
                 </div>`;
