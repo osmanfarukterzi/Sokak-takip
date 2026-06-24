@@ -306,23 +306,24 @@ function sahneAl(gun, saat) {
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     
-    let benimIsmim = (currentUser.email === "osmanfarukterzi@gmail.com") ? "Sirayet" : currentUser.displayName.split(' ')[0];
+    // Veritabanındaki isminle birebir aynı olduğundan emin olalım
+    let benimIsmim = "sirayet"; 
     let benimSlotlarim = [];
 
-    Object.keys(mevcutSlotlar).forEach(g => {
-        if(mevcutSlotlar[g]) {
-            Object.keys(mevcutSlotlar[g]).forEach(s => {
-                let nameInSlot = mevcutSlotlar[g][s] ? mevcutSlotlar[g][s].toLowerCase() : "";
+    Object.keys(mevcutSlotlar).forEach(gun => {
+        if(mevcutSlotlar[gun]) {
+            Object.keys(mevcutSlotlar[gun]).forEach(saat => {
+                let slotIsmi = mevcutSlotlar[gun][saat] ? mevcutSlotlar[gun][saat].toString().toLowerCase().trim() : "";
                 
-                if(nameInSlot === "Sirayet" || nameInSlot === benimIsmim.toLowerCase()) {
-                    benimSlotlarim.push({ gun: g, saat: s });
+                if(slotIsmi === benimIsmim) {
+                    benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
         }
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Aktif slotun bulunamadı! Lütfen slotunda isminin 'Sirayet' olarak yazılı olduğundan emin ol."); 
+        alert("Sistemde 'sirayet' adına kayıtlı slot bulunamadı. Lütfen slot listesini kontrol et."); 
         return; 
     }
     
@@ -338,7 +339,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
 
     db.ref("takas_talepleri").push().set({
         gonderenUid: currentUser.uid,
-        gonderenIsim: benimIsmim,
+        gonderenIsim: "Sirayet",
         gonderenGun: bSlot.gun,
         gonderenSaat: bSlot.saat,
         aliciIsim: karsiMuzisyen,
@@ -346,8 +347,9 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas isteğin 'Sirayet' ismiyle gönderildi!");
+    alert("Takas talebin gönderildi!");
 }
+
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const alani = document.getElementById("canli-takas-talepleri-alani");
