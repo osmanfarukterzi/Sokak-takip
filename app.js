@@ -26,11 +26,18 @@ const varsayilanProgram = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Performans panosu için alan oluşturma
+    const anaKapsayici = document.getElementById("program-akisi")?.parentElement;
+    if(anaKapsayici && !document.getElementById("performans-panosu-alani")) {
+        const yeniDiv = document.createElement("div");
+        yeniDiv.id = "performans-panosu-alani";
+        anaKapsayici.appendChild(yeniDiv);
+    }
+
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
-    
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
     auth.onAuthStateChanged(user => {
@@ -134,7 +141,6 @@ function CanliSahneVeGeriSayimMotoru() {
         sayacYazi.innerText = `${h}:${m}:${s}`;
         sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
     } else {
-        // "MEYDANDA ŞU AN KİMSE YOK" düzeltmesi burada aktif
         sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
         sahneYazi.className = "text-2xl font-black text-slate-400 tracking-wide";
         if(canliIsik) canliIsik.className = "w-3 h-3 bg-slate-600 rounded-full shrink-0";
@@ -158,11 +164,8 @@ function CanliSahneVeGeriSayimMotoru() {
 }
 
 function ProgramiCiz(veri) {
-    // HTML'deki dinamik tarih başlığını burada doğrudan güncelliyoruz, böylece uçması imkansız.
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
-    if (baslikEl) {
-        baslikEl.innerText = "29 HAZİRAN - 5 TEMMUZ SLOT TAKVİMİ";
-    }
+    if (baslikEl) baslikEl.innerText = "29 HAZİRAN - 5 TEMMUZ SLOT TAKVİMİ";
 
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
@@ -232,6 +235,36 @@ function ProgramiCiz(veri) {
                 <div class="space-y-3">${slotlarHtml}</div>
             </div>`;
     });
+    PerformansPanosunuCiz();
+}
+
+function PerformansPanosunuCiz() {
+    const pano = document.getElementById("performans-panosu-alani");
+    if (!pano) return;
+    
+    let skorlar = {};
+    Object.keys(mevcutSlotlar || {}).forEach(g => {
+        Object.keys(mevcutSlotlar[g]).forEach(s => {
+            let isim = mevcutSlotlar[g][s];
+            if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
+        });
+    });
+    const s = Object.entries(skorlar).sort((a, b) => b[1] - a[1]);
+    
+    pano.innerHTML = `
+        <div class="border-t border-slate-800 pt-6 mt-6">
+            <h3 class="text-white font-black mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-trophy text-amber-500"></i> AYLIK PERFORMANS TABLOSU
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+                ${s.map(([n, h]) => `
+                    <div class="flex justify-between items-center bg-[#0b1329] p-3 rounded-lg border border-slate-800">
+                        <span class="font-bold text-slate-300">${n}</span>
+                        <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-black">${h} SAAT</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
 }
 
 function slotBiral(gun, saat) {
