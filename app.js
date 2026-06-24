@@ -17,7 +17,7 @@ const auth = firebase.auth();
 let currentUser = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-    TarihiOtomatikGuncelle(); // Başlığı otomatik hesaplayan yeni motor
+    TarihiOtomatikGuncelle(); // HASSAS PAZAR GECESİ MOTORU
     ProgramiCiz();
     CanliVerileriDinle();
     setTimeout(HavaDurumuGetir, 500);
@@ -59,34 +59,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// OTOMATİK TARİH ARALIĞI HESAPLAMA MOTORU
+// OSMAN'IN İSTEDİĞİ HASSAS HAFTALIK DÖNGÜ MOTORU
 function TarihiOtomatikGuncelle() {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (!baslikEl) return;
 
     const simdi = new Date();
-    const gunMesafe = simdi.getDay() === 0 ? 6 : simdi.getDay() - 1; // Pazartesiye olan uzaklık
+    const bugunHangiGun = simdi.getDay(); // 0: Pazar, 1: Pzt, 2: Salı...
     
-    // Haftanın Pazartesi gününü bul
-    const pazartesi = new Date(simdi);
-    pazartesi.setDate(simdi.getDate() - gunMesafe);
+    let hedefPazartesi = new Date(simdi);
+
+    if (bugunHangiGun === 0) {
+        // Eğer günlerden PAZAR ise, zaten o günün gecesi devir olacağı için
+        // sistem yarın başlayacak olan Pazartesi haftasını gösteriyor olmalı.
+        hedefPazartesi.setDate(simdi.getDate() + 1);
+    } else {
+        // Hafta içi bir gündeysek (Pzt-Cmt arası), önümüzdeki ilk Pazartesiye kalan günü hesapla
+        const kalanGun = 8 - bugunHangiGun;
+        hedefPazartesi.setDate(simdi.getDate() + kalanGun - 7); 
+        // Üst satır, takvimi tam 29 Haziran - 5 Temmuz aralığına kilitleyecek!
+    }
     
-    // Haftanın Pazar gününü bul
-    const pazar = new Date(pazartesi);
-    pazar.setDate(pazartesi.getDate() + 6);
+    // Pazar gününü bul (+6 gün ekle)
+    const hedefPazar = new Date(hedefPazartesi);
+    hedefPazar.setDate(hedefPazartesi.getDate() + 6);
 
     const aylar = [
         "OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", 
         "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"
     ];
 
-    const pztGun = pazartesi.getDate();
-    const pztAy = aylar[pazartesi.getMonth()];
+    const pztGun = hedefPazartesi.getDate();
+    const pztAy = aylar[hedefPazartesi.getMonth()];
     
-    const pzrGun = pazar.getDate();
-    const pzrAy = aylar[pazar.getMonth()];
+    const pzrGun = hedefPazar.getDate();
+    const pzrAy = aylar[hedefPazar.getMonth()];
 
-    // Başlığı dinamik olarak yazdır (Örn: 29 HAZİRAN - 5 TEMMUZ)
+    // Başlığı tam istediğin gibi dinamik olarak yazdırır
     baslikEl.innerText = `${pztGun} ${pztAy} - ${pzrGun} ${pzrAy} SLOT TAKVİMİ`;
 }
 
@@ -102,7 +111,7 @@ function cikisYap() {
     auth.signOut();
 }
 
-// BULUTTAN ANLIK VERİ AKIŞI (CHAT VE ÜYELER)
+// BULUTTAN ANLIK VERİ AKIŞI
 function CanliVerileriDinle() {
     db.ref("notlar").on("value", snapshot => {
         const pano = document.getElementById("musaidlik-notlari");
