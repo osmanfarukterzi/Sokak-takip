@@ -269,8 +269,15 @@ function PerformansPanosunuCiz() {
 
 function slotBiral(gun, saat) {
     if (!confirm(`${gun} günü ${saat} slotunuzu boşaltmak istediğinize emin misiniz?`)) return;
+    
+    // İsmi her türlü "Sirayet" olarak algılatıyoruz
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
-        db.ref("notlar").push({ uid: "sistem", isim: "📢 BİLDİRİM", mesaj: `${currentUser.displayName}, ${gun} ${saat} slotunu boşa çıkardı.` });
+        db.ref("notlar").push({ 
+            uid: "sistem", 
+            isim: "📢 İPTAL BİLDİRİMİ", 
+            mesaj: `Sirayet, ${gun} ${saat} slotunu boşa çıkardı.` 
+        });
+        alert("Slot başarıyla boşaltıldı!");
     });
 }
 
@@ -282,19 +289,17 @@ function sahneAl(gun, saat) {
 }
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
-    if(!currentUser) return;
-    let userGroupKey = currentUser.displayName.toLowerCase();
+    if(!currentUser) { alert("Önce giriş yap!"); return; }
+    
+    // Senin ismini "Sirayet"e zorlayalım
     let benimSlotlarim = [];
-
     Object.keys(mevcutSlotlar).forEach(g => {
-        if(mevcutSlotlar[g]) {
-            Object.keys(mevcutSlotlar[g]).forEach(s => {
-                let nameInSlot = mevcutSlotlar[g][s] ? mevcutSlotlar[g][s].toLowerCase() : "";
-                if(userGroupKey.includes(nameInSlot) || (nameInSlot.includes("sirayet") && userGroupKey.includes("osman faruk"))) {
-                    benimSlotlarim.push({ gun: g, saat: s });
-                }
-            });
-        }
+        Object.keys(mevcutSlotlar[g]).forEach(s => {
+            // Veritabanındaki isim "Sirayet" ise onu benim slotum olarak gör
+            if(mevcutSlotlar[g][s] === "Sirayet") { 
+                benimSlotlarim.push({ gun: g, saat: s });
+            }
+        });
     });
 
     if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif bir slotunuz bulunmuyor!"); return; }
@@ -408,20 +413,22 @@ function CanliVerileriDinle() {
                 </div>`;
         });
     });
+   
     db.ref("muzisyenler").on("value", snapshot => {
-        const liste = document.getElementById("muzisyen-listesi-alan");
-        if (!liste) return; liste.innerHTML = "";
-        const v = snapshot.val();
-        if(!v) return;
-        Object.keys(v).forEach(k => {
-            liste.innerHTML += `
-                <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60">
-                    <img src="${v[k].picture}" class="w-6 h-6 rounded-full border border-slate-700" referrerpolicy="no-referrer">
-                    <span class="text-xs font-bold text-slate-300">${v[k].name.toUpperCase()}</span>
-                </div>`;
-        });
+    const liste = document.getElementById("muzisyen-listesi-alan");
+    if (!liste) return; liste.innerHTML = "";
+    const v = snapshot.val();
+    if(!v) return;
+    
+    // Benzersiz müzisyenleri listele
+    let gorunenler = [];
+    Object.keys(v).forEach(k => {
+        if(!gorunenler.includes(v[k].name)) {
+            liste.innerHTML += `<div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60"><img src="${v[k].picture}" class="w-6 h-6 rounded-full" referrerpolicy="no-referrer"><span class="text-xs font-bold text-slate-300">${v[k].name.toUpperCase()}</span></div>`;
+            gorunenler.push(v[k].name);
+        }
     });
-}
+});
 
 function notEkle() {
     if (!currentUser) return;
