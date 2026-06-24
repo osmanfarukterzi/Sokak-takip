@@ -15,17 +15,29 @@ const auth = firebase.auth();
 let currentUser = null;
 let mevcutSlotlar = {}; 
 
+// İSİM EŞLEŞTİRME - Burayı istediğin kadar uzatabilirsin, satır sayısı arttıkça sistem daha akıllı hale gelir.
 const isimEslestirme = {
     "osmanfarukterzi@gmail.com": "Sirayet",
-    "nebi@mail.com": "Nebi",
-    "berkan@mail.com": "Berkan"
+    "nebi@ornek.com": "Nebi",
+    "berkan@ornek.com": "Berkan",
+    "doga@ornek.com": "Doğa",
+    "rasit@ornek.com": "Raşit",
+    "samet@ornek.com": "Samet",
+    "ismet@ornek.com": "İsmet",
+    "ugur@ornek.com": "Uğur",
+    "yigit@ornek.com": "Yiğit",
+    "faruk@ornek.com": "Faruk",
+    "enes@ornek.com": "Enes",
+    "mami@ornek.com": "Mami"
 };
 
 function getSahneIsmi(user) {
+    if (!user || !user.email) return "Misafir";
     return isimEslestirme[user.email] || user.displayName.split(' ')[0];
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Performans panosu ve takvim alanı kontrolü
     const anaKapsayici = document.getElementById("program-akisi")?.parentElement;
     if(anaKapsayici && !document.getElementById("performans-panosu-alani")) {
         const yeniDiv = document.createElement("div");
@@ -33,7 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
         anaKapsayici.appendChild(yeniDiv);
     }
 
-    VeritabaniniKontrolEtVeDinle();
+    db.ref("haftalik_slotlar").on("value", snapshot => {
+        mevcutSlotlar = snapshot.val();
+        ProgramiCiz(mevcutSlotlar);
+    });
+
     CanliVerileriDinle();
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
@@ -44,47 +60,17 @@ document.addEventListener("DOMContentLoaded", () => {
             currentUser = user;
             const authArea = document.getElementById("auth-status-area");
             if(authArea) authArea.innerHTML = `<div class="flex items-center gap-2 bg-[#050b18] py-1.5 px-3 rounded-xl border border-emerald-500/30"><span class="text-xs font-bold text-emerald-400">${getSahneIsmi(user)}</span><button onclick="cikisYap()" class="text-[10px] text-rose-400 ml-2">Çıkış</button></div>`;
-            db.ref("muzisyenler/" + user.uid).set({ name: getSahneIsmi(user), picture: user.photoURL });
+            db.ref("muzisyenler/" + user.uid).set({ name: getSahneIsmi(user), picture: user.photoURL, email: user.email });
         } else {
             const authArea = document.getElementById("auth-status-area");
             if(authArea) authArea.innerHTML = `<button onclick="googleGirisYap()" class="bg-white text-slate-900 font-bold py-2 px-3 rounded-xl text-xs">Google ile Giriş Yap</button>`;
         }
-        ProgramiCiz(mevcutSlotlar);
     });
 });
 
-function VeritabaniniKontrolEtVeDinle() {
-    db.ref("haftalik_slotlar").on("value", snapshot => {
-        mevcutSlotlar = snapshot.val();
-        ProgramiCiz(mevcutSlotlar);
-        CanliSahneVeGeriSayimMotoru();
-    });
-}
-
-function CanliSahneVeGeriSayimMotoru() {
-    const sahneYazi = document.getElementById("su-an-sahnede-kim-var");
-    const sayacYazi = document.getElementById("canli-geri-sayim");
-    if (!sahneYazi || !sayacYazi) return;
-
-    const simdi = new Date();
-    const gunlerTr = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
-    const bugun = gunlerTr[simdi.getDay()];
-    const saat = simdi.getHours();
-    
-    let aktifSlot = null;
-    if (saat >= 12 && saat < 15) aktifSlot = "12.00-15.00";
-    else if (saat >= 15 && saat < 18) aktifSlot = "15.00-18.00";
-    else if (saat >= 18 && saat < 21) aktifSlot = "18.00-21.00";
-    else if (saat >= 21 && saat < 24) aktifSlot = "21.00-24.00";
-
-    if (aktifSlot && mevcutSlotlar[bugun] && mevcutSlotlar[bugun][aktifSlot]) {
-        sahneYazi.innerText = mevcutSlotlar[bugun][aktifSlot];
-    } else {
-        sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
-    }
-}
-
 function ProgramiCiz(veri) {
+    const baslikEl = document.getElementById("dinamik-tarih-basligi");
+    if (baslikEl) baslikEl.innerText = "29 HAZİRAN - 5 TEMMUZ SLOT TAKVİMİ";
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi || !veri) return;
     programAkisi.innerHTML = "";
@@ -96,15 +82,17 @@ function ProgramiCiz(veri) {
             const isBoş = isim === "BOŞ" || isim === "";
             const isOwner = currentUser && getSahneIsmi(currentUser) === isim;
             
-            slotlarHtml += `<div class="p-3 rounded-lg border ${isBoş ? 'border-dashed border-amber-500/30' : 'border-slate-800'} bg-[#050b18]">
-                <span class="text-[10px] text-orange-500 font-bold">${saat}</span>
-                <div class="font-bold text-sm ${isBoş ? 'text-amber-500/50' : 'text-white'}">${isBoş ? 'Müsait' : isim}</div>
-                ${isOwner ? `<button onclick="slotBiral('${gun}','${saat}')" class="text-[10px] text-rose-400 font-bold mt-1">İptal Et</button>` : ""}
-                ${isBoş && currentUser ? `<button onclick="sahneAl('${gun}','${saat}')" class="text-[10px] text-emerald-400 font-bold mt-1">Sahne Al</button>` : ""}
-                ${!isBoş && !isOwner && currentUser ? `<button onclick="takasPenceresiAc('${gun}','${saat}','${isim}')" class="text-[10px] text-cyan-400 font-bold mt-1">Takas</button>` : ""}
+            slotlarHtml += `
+            <div class="p-3.5 rounded-xl flex justify-between items-center ${isBoş ? 'bg-amber-500/5 border border-dashed border-amber-500/30' : (isOwner ? 'bg-emerald-500/10 border border-emerald-500/40' : 'bg-[#050b18] border border-slate-800/80')}">
+                <div><span class="text-[10px] font-bold text-orange-500">${saat}</span><span class="font-extrabold text-sm block ${isBoş ? 'text-amber-500/50' : 'text-white'}">${isBoş ? 'Müsait' : isim}</span></div>
+                <div class="shrink-0">
+                    ${isBoş && currentUser ? `<button onclick="sahneAl('${gun}','${saat}')" class="text-[10px] bg-amber-500 px-2 py-0.5 rounded font-black cursor-pointer">Sahne Al</button>` : ""}
+                    ${isOwner ? `<button onclick="slotBiral('${gun}','${saat}')" class="text-[9px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded cursor-pointer">İptal Et</button>` : ""}
+                    ${!isBoş && !isOwner && currentUser ? `<button onclick="takasPenceresiAc('${gun}','${saat}','${isim}')" class="text-[9px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded cursor-pointer">Takas</button>` : ""}
+                </div>
             </div>`;
         });
-        programAkisi.innerHTML += `<div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-4 min-w-[340px] flex-shrink-0"><div class="font-bold text-white mb-3">${gun}</div><div class="space-y-2">${slotlarHtml}</div></div>`;
+        programAkisi.innerHTML += `<div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-4 min-w-[340px] flex-shrink-0"><div class="font-bold text-sm text-white mb-3">${gun}</div><div class="space-y-3">${slotlarHtml}</div></div>`;
     });
     PerformansPanosunuCiz();
 }
@@ -124,14 +112,15 @@ function PerformansPanosunuCiz() {
 }
 
 function slotBiral(g, s) {
-    if(!confirm("İptal etmek istediğine emin misin?")) return;
+    if(!confirm("Bu slotu boşaltmak istediğine emin misin?")) return;
     db.ref(`haftalik_slotlar/${g}/${s}`).set("BOŞ");
-    db.ref("notlar").push({ isim: getSahneIsmi(currentUser), mesaj: `${g} ${s} slotunu iptal etti.` });
+    db.ref("notlar").push({ isim: getSahneIsmi(currentUser), mesaj: `${g} ${s} slotunu boşalttı.` });
 }
 
 function sahneAl(g, s) {
-    if(!confirm("Rezerve etmek istiyor musun?")) return;
+    if(!confirm("Bu slotu rezerve etmek istiyor musun?")) return;
     db.ref(`haftalik_slotlar/${g}/${s}`).set(getSahneIsmi(currentUser));
+    db.ref("notlar").push({ isim: getSahneIsmi(currentUser), mesaj: `${g} ${s} slotunu aldı.` });
 }
 
 function takasPenceresiAc(kG, kS, kM) {
@@ -141,12 +130,13 @@ function takasPenceresiAc(kG, kS, kM) {
             if(mevcutSlotlar[g][s] === getSahneIsmi(currentUser)) benimSlotlarim.push({ gun: g, saat: s });
         });
     });
-    if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif slotunuz yok!"); return; }
+    if(benimSlotlarim.length === 0) { alert("Takas edebileceğiniz aktif slotunuz bulunmuyor!"); return; }
+    
     let secim = prompt("Hangi slotunu vermek istersin?\n" + benimSlotlarim.map((x,i) => (i+1)+") "+x.gun+" "+x.saat).join("\n"));
-    if(secim) {
+    if(secim && benimSlotlarim[parseInt(secim)-1]) {
         let b = benimSlotlarim[parseInt(secim)-1];
         db.ref("takas_talepleri").push().set({ g: getSahneIsmi(currentUser), gG: b.gun, gS: b.saat, aI: kM, aG: kG, aS: kS, d: "beklemede" });
-        alert("Talep gönderildi!");
+        alert("Takas talebi gönderildi!");
     }
 }
 
@@ -159,7 +149,7 @@ function CanliTakaslariDinle() {
         Object.keys(t).forEach(k => {
             const req = t[k];
             if(req.d === "beklemede" && req.aI === getSahneIsmi(currentUser)) {
-                alani.innerHTML += `<div class="bg-cyan-900 p-3 rounded mt-2 text-white">Takas: ${req.g} senin ${req.aG} ${req.aS} saatini istiyor. <button onclick="takasOnayla('${k}')">Onayla</button></div>`;
+                alani.innerHTML += `<div class="bg-cyan-950 p-3 rounded-xl border border-cyan-500 mb-2 text-white text-xs">Takas: <b>${req.g}</b> senin <b>${req.aG} ${req.aS}</b> saatini istiyor. <button onclick="takasOnayla('${k}')" class="bg-emerald-500 px-2 py-0.5 rounded ml-2">Kabul Et</button></div>`;
             }
         });
     });
@@ -173,6 +163,7 @@ function takasOnayla(k) {
         g[`haftalik_slotlar/${r.aG}/${r.aS}`] = r.g;
         g[`takas_talepleri/${k}/d`] = "onaylandi";
         db.ref().update(g);
+        db.ref("notlar").push({ isim: "SİSTEM", mesaj: `${r.g} ile ${r.aI} takas yaptı.` });
     });
 }
 
@@ -182,9 +173,9 @@ function CanliVerileriDinle() {
         if (!pano) return; pano.innerHTML = "";
         const veriler = snapshot.val();
         if (!veriler) return;
-        Object.keys(veriler).reverse().slice(0,5).forEach(key => {
+        Object.keys(veriler).reverse().slice(0,8).forEach(key => {
             const item = veriler[key];
-            pano.innerHTML += `<div class="bg-[#050b18] p-2 rounded-xl border border-slate-800 mb-2"><span class="text-orange-400 font-bold">${item.isim}:</span> ${item.mesaj}</div>`;
+            pano.innerHTML += `<div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800 mb-2"><span class="text-orange-400 font-bold text-xs">${item.isim}:</span> <span class="text-slate-300 text-xs">${item.mesaj}</span></div>`;
         });
     });
     db.ref("muzisyenler").on("value", snapshot => {
@@ -193,9 +184,18 @@ function CanliVerileriDinle() {
         const v = snapshot.val();
         if(!v) return;
         Object.keys(v).forEach(k => {
-            liste.innerHTML += `<div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800 mb-1"><span class="text-xs font-bold text-slate-300">${v[k].name.toUpperCase()}</span></div>`;
+            liste.innerHTML += `<div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800 mb-1"><span class="text-xs font-bold text-slate-300 uppercase">${v[k].name}</span></div>`;
         });
     });
+}
+
+function CanliSahneVeGeriSayimMotoru() {
+    const sahneYazi = document.getElementById("su-an-sahnede-kim-var");
+    if (!sahneYazi) return;
+    const s = new Date(); const gTr = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    const g = gTr[s.getDay()]; const h = s.getHours();
+    let slot = h >= 21 ? "21.00-24.00" : h >= 18 ? "18.00-21.00" : h >= 15 ? "15.00-18.00" : h >= 12 ? "12.00-15.00" : null;
+    sahneYazi.innerText = (slot && mevcutSlotlar[g] && mevcutSlotlar[g][slot] !== "BOŞ") ? mevcutSlotlar[g][slot] : "MEYDANDA KİMSE YOK";
 }
 
 async function HavaDurumuGetir() {
