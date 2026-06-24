@@ -31,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
     
-    // ⚡ CANLI SAYAÇ MOTORUNU BAŞLAT ⚡
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
     auth.onAuthStateChanged(user => {
@@ -84,7 +83,6 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-// ⏱️ SİHİRLİ CANLI GERİ SAYIM VE SAHNE MOTORU KODU
 function CanliSahneVeGeriSayimMotoru() {
     const sahneYazi = document.getElementById("su-an-sahnede-kim-var");
     const sayacYazi = document.getElementById("canli-geri-sayim");
@@ -126,8 +124,7 @@ function CanliSahneVeGeriSayimMotoru() {
             if(tabela) tabela.style.borderColor = "rgba(249, 115, 22, 0.3)";
         }
 
-        // Kalan Süreyi Hesapla
-        const toplamBitisSaniye = bitisSaats = bitisSaati * 3600;
+        const toplamBitisSaniye = bitisSaati * 3600;
         let kalanSaniye = toplamBitisSaniye - toplamGecenSaniye;
 
         const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
@@ -137,13 +134,12 @@ function CanliSahneVeGeriSayimMotoru() {
         sayacYazi.innerText = `${h}:${m}:${s}`;
         sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
     } else {
-        // Saat 00:00 ile 12:00 arasındaysa (Meydan kapalı / resmi slot yoksa)
-        sahneYazi.innerText = "MEYDAN RESMİ PROGRAMI DIŞI HOURS";
-        sahneYazi.className = "text-xl font-black text-slate-500 tracking-wide";
-        if(canliIsik) canliIsik.className = "w-3 h-3 bg-slate-700 rounded-full shrink-0";
+        // Düzenlenen Kısım: Saat 00:00 ile 12:00 arası
+        sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
+        sahneYazi.className = "text-2xl font-black text-slate-400 tracking-wide";
+        if(canliIsik) canliIsik.className = "w-3 h-3 bg-slate-600 rounded-full shrink-0";
         if(tabela) tabela.style.borderColor = "rgba(51, 65, 85, 0.2)";
 
-        // Saat 12:00'ye ne kadar kaldığını hesapla
         let sonrakiHedef = 12 * 3600;
         let kalanSaniye = 0;
         if (saat >= 0 && saat < 12) {
