@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(HavaDurumuGetir, 500);
     
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
+    DinamikTarihHesapla();
 
     auth.onAuthStateChanged(user => {
         const authArea = document.getElementById("auth-status-area");
@@ -134,7 +135,6 @@ function CanliSahneVeGeriSayimMotoru() {
         sayacYazi.innerText = `${h}:${m}:${s}`;
         sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
     } else {
-        // Düzenlenen Kısım: Saat 00:00 ile 12:00 arası
         sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
         sahneYazi.className = "text-2xl font-black text-slate-400 tracking-wide";
         if(canliIsik) canliIsik.className = "w-3 h-3 bg-slate-600 rounded-full shrink-0";
@@ -400,4 +400,27 @@ async function HavaDurumuGetir() {
             document.getElementById("havadurumu-derece").innerText = `Beşiktaş: ${Math.round(data.current_weather.temperature)}°C`;
         }
     } catch (e) {}
+}
+
+function DinamikTarihHesapla() {
+    const baslikEl = document.getElementById("dinamik-tarih-basligi");
+    if (!baslikEl) return;
+
+    const simdi = new Date();
+    const bugunGunu = simdi.getDay();
+    const fark = bugunGunu === 0 ? -6 : 1 - bugunGunu;
+    
+    const pazartesi = new Date(simdi);
+    pazartesi.setDate(simdi.getDate() + fark);
+    
+    const pazar = new Date(pazartesi);
+    pazar.setDate(pazartesi.getDate() + 6);
+
+    const formatla = (d) => {
+        const gun = d.getDate().toString().padStart(2, '0');
+        const ay = (d.getMonth() + 1).toString().padStart(2, '0');
+        return `${gun}.${ay}`;
+    };
+
+    baslikEl.innerText = `${formatla(pazartesi)} - ${formatla(pazar)} TAKVİMİ`;
 }
