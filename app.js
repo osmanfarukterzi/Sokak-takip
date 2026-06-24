@@ -13,6 +13,15 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 let currentUser = null;
+const mailToName = {
+    "osmanfarukterzi@gmail.com": "Sirayet"
+    // Diğerlerini sonra buraya ekleyeceğiz
+};
+
+function getAktifIsim(user) {
+    if (!user) return "";
+    return mailToName[user.email] || user.displayName.split(' ')[0];
+}
 let mevcutSlotlar = {}; 
 
 const varsayilanProgram = {
@@ -268,39 +277,49 @@ function PerformansPanosunuCiz() {
 }
 
 function slotBiral(gun, saat) {
-    if (!confirm(`${gun} günü ${saat} slotunu boşaltmak istediğine emin misin?`)) return;
+    if (!currentUser) return;
+    let isim = getAktifIsim(currentUser);
     
-    let isim = currentUser.displayName.toLowerCase().includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
-    
+    if (!confirm(`${gun} ${saat} slotunu "${isim}" olarak boşaltmak istediğine emin misin?`)) return;
+
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
         db.ref("notlar").push({
-            isim: isim,
-            mesaj: `${gun} ${saat} slotunu iptal etti.`
+            isim: "📢 BİLDİRİM",
+            mesaj: `${isim}, ${gun} ${saat} slotunu boşa çıkardı.`
         });
-        alert("Slot boşaltıldı ve sisteme bildirildi.");
-    }).catch(e => alert("Hata: " + e.message));
+        alert("Slot başarıyla boşaltıldı.");
+    });
 }
 
 function sahneAl(gun, saat) {
-    if(!currentUser) return;
-    let sahneIsmi = currentUser.displayName.toLowerCase().includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
-    if (!confirm(`${gun} günü ${saat} slotunu rezerve etmek istiyor musunuz?`)) return;
-    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(sahneIsmi);
+    if (!currentUser) return;
+    let isim = getAktifIsim(currentUser);
+    
+    if (!confirm(`${gun} ${saat} slotunu "${isim}" olarak almak istiyor musun?`)) return;
+
+    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
+        db.ref("notlar").push({
+            isim: "✅ YENİ SLOT",
+            mesaj: `${isim}, ${gun} ${saat} slotunu aldı.`
+        });
+    });
 }
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    let userDisplayName = currentUser.displayName.toLowerCase();
+    
+    // Senin mailin üzerinden ismini sabitliyoruz
+    let benimIsmim = (currentUser.email === "osmanfarukterzi@gmail.com") ? "Sirayet" : currentUser.displayName.split(' ')[0];
     let benimSlotlarim = [];
 
+    // Veritabanındaki tüm slotları tara
     Object.keys(mevcutSlotlar).forEach(g => {
         if(mevcutSlotlar[g]) {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
                 let nameInSlot = mevcutSlotlar[g][s] ? mevcutSlotlar[g][s].toLowerCase() : "";
-                // BURASI ÇÖZÜLDÜ: Hem tam isimle hem de Sirayet ile eşleştirme yapıyoruz
-                if(userDisplayName.includes(nameInSlot) || 
-                   (nameInSlot.includes("sirayet") && userDisplayName.includes("osman faruk")) ||
-                   (userDisplayName.includes("osman faruk") && nameInSlot === "sirayet")) {
+                
+                // Eğer slotta yazan isim senin "Sirayet" isminle eşleşiyorsa
+                if(nameInSlot === "sirayet" || nameInSlot === benimIsmim.toLowerCase()) {
                     benimSlotlarim.push({ gun: g, saat: s });
                 }
             });
@@ -308,21 +327,24 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Sistem seni tanıyamadı veya aktif slotun yok! (Slotun üzerinde ismin yazdığından emin ol)"); 
+        alert("Aktif slotun bulunamadı! Lütfen slotunda isminin 'Sirayet' olarak yazılı olduğundan emin ol."); 
         return; 
     }
     
-    let metin = "Hangi slotunuzu vermek istiyorsunuz?\n\n";
+    let metin = "Hangi slotunu vermek istiyorsun?\n\n";
     benimSlotlarim.forEach((item, idx) => { metin += `${idx + 1}) ${item.gun} - ${item.saat}\n`; });
+    
     let secim = prompt(metin);
     let idx = parseInt(secim) - 1;
+    
     if(isNaN(idx) || idx < 0 || idx >= benimSlotlarim.length) return;
 
     let bSlot = benimSlotlarim[idx];
-    let gonderenIsim = userDisplayName.includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0];
 
+    // Takas talebini gönder
     db.ref("takas_talepleri").push().set({
-        gonderenIsim: gonderenIsim,
+        gonderenUid: currentUser.uid,
+        gonderenIsim: benimIsmim,
         gonderenGun: bSlot.gun,
         gonderenSaat: bSlot.saat,
         aliciIsim: karsiMuzisyen,
@@ -330,9 +352,8 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas isteği gönderildi!");
+    alert("Takas isteğin 'Sirayet' ismiyle gönderildi!");
 }
-
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const alani = document.getElementById("canli-takas-talepleri-alani");
