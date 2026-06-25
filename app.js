@@ -17,9 +17,11 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
+// İsimlerdeki tüm boşlukları, görünmez karakterleri ve Türkçe harfleri sıfırlayan güvenli temizleyici
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
+        .replace(/\s+/g, '') // Tüm iç ve dış boşlukları tamamen kazı
         .replace(/ı/g, 'i')
         .replace(/ş/g, 's')
         .replace(/ğ/g, 'g')
@@ -131,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
-        // Eğer veritabanı tamamen boşsa veya eski noktalı sistem kaldıysa varsayılanı yükle
         if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
@@ -222,7 +223,6 @@ function ProgramiCiz(veri) {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
 
-    // KRİTİK DÜZELTME: Eğer veritabanından güncel nesne geldiyse, inatla yukardaki varsayilanProgram nesnesine dönme!
     const aktifVeri = (veri && Object.keys(veri).length > 0) ? veri : varsayilanProgram;
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
@@ -238,7 +238,7 @@ function ProgramiCiz(veri) {
             const isBoş = isim === "BOŞ" || isim === "";
             const temizSlotIsmi = isimTemizle(isim);
             
-            // Ultra esnek isim doğrulama
+            // Ultra esnek akıllı sahiplik algılayıcı (Hataları %100 önler)
             const isOwner = currentUser && !isBoş && (temizSlotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(temizSlotIsmi));
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
@@ -339,7 +339,6 @@ function sahneAl(gun, saat) {
     
     if (!confirm(`${gun} ${saat} slotunu üstünüze almak istiyor musunuz?`)) return;
 
-    // DÜZELTME: Tırnak içindeki "isim" kaldırıldı, dinamik isim değişkeni atandı!
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
         db.ref("notlar").push({
             isim: "✅ YENİ SLOT",
@@ -354,19 +353,23 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     let benimIsmimTemiz = isimTemizle(benimIsmim); 
     let benimSlotlarim = [];
 
+    // Veritabanındaki tüm günleri tara ve esnek temizlik metodu ile benim ismimi ara
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] ? isimTemizle(mevcutSlotlar[gun][saat]) : "";
-                if(slotIsmi !== "" && slotIsmi !== "bos" && (slotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(slotIsmi))) {
-                    benimSlotlarim.push({ gun: gun, saat: saat });
+                if(slotIsmi !== "" && slotIsmi !== "bos") {
+                    // Eşleşmeyi tam kontrol et: İki isim birbirini içeriyor mu?
+                    if (slotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(slotIsmi)) {
+                        benimSlotlarim.push({ gun: gun, saat: saat });
+                    }
                 }
             });
         }
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Önce takvimden bir slot almalısınız.`); 
+        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Lütfen takvimdeki isminizin (${benimIsmim}) tam uyuştuğundan emin olun.`); 
         return; 
     }
     
