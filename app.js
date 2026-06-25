@@ -595,6 +595,118 @@ function notEkle() {
     mesajEl.value = "";
 }
 
+// 1. SOHBET ODASI MOTORU: Mesajları Canlı Dinleme
+function SohbetOdasiDinle() {
+    db.ref("meydan_chat").limitToLast(30).on("value", snapshot => {
+        const sohbetKutusu = document.getElementById("sohbet-mesajlari");
+        if (!sohbetKutusu) return;
+        
+        sohbetKutusu.innerHTML = "";
+        const veriler = snapshot.val();
+        
+        if (!veriler) {
+            sohbetKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center pt-8">Henüz mesaj yok. İlk mesajı sen yaz!</div>`;
+            return;
+        }
+
+        Object.keys(veriler).forEach(key => {
+            const m = veriler[key];
+            const isMe = currentUser && m.isim === getAktifIsim(currentUser);
+            
+            // Kimin yazdığına göre sağa veya sola yasla
+            sohbetKutusu.innerHTML += `
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                    <span class="text-[10px] text-slate-500 font-bold mb-0.5 px-1">${m.isim}</span>
+                    <div class="max-w-[85%] px-3 py-2 rounded-2xl text-xs ${isMe ? 'bg-rose-600/20 border border-rose-500/30 text-rose-200 rounded-tr-none' : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'}">
+                        ${m.mesaj}
+                    </div>
+                </div>`;
+        });
+        
+        // Sohbeti otomatik en aşağı kaydır
+        sohbetKutusu.scrollTop = sohbetKutusu.scrollHeight;
+    });
+}
+
+function MeydanaMesajGonder() {
+    if (!currentUser) {
+        alert("Mesaj yazmak için giriş yapmalısın Osman!");
+        return;
+    }
+    const girdi = document.getElementById("sohbet-girdi");
+    if (!girdi || girdi.value.trim() === "") return;
+
+    const yeniMesaj = {
+        isim: getAktifIsim(currentUser),
+        mesaj: girdi.value.trim(),
+        tarih: Date.now()
+    };
+
+    db.ref("meydan_chat").push(yeniMesaj);
+    girdi.value = ""; // Kutuyu temizle
+}
+
+document.getElementById("sohbet-girdi")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") MeydanaMesajGonder();
+});
+
+function PerformansPanosunuCiz() {
+    const slotKutusu = document.getElementById("haftalik-slot-sayilari");
+    const skorKutusu = document.getElementById("skor-tablosu");
+    if (!slotKutusu || !skorKutusu || !mevcutSlotlar) return;
+
+    let istatistik = {};
+    const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+
+    gunler.forEach(gun => {
+        if (mevcutSlotlar[gun]) {
+            Object.keys(mevcutSlotlar[gun]).forEach(saat => {
+                const isim = mevcutSlotlar[gun][saat];
+                if (isim && isim !== "BOŞ" && isim !== "") {
+                    if (!istatistik[isim]) istatistik[isim] = 0;
+                    istatistik[isim]++;
+                }
+            });
+        }
+    });
+
+    let siraliListe = Object.keys(istatistik).map(isim => {
+        return { isim: isim, slotAdet: istatistik[isim], toplamSaat: istatistik[isim] * 3 };
+    }).sort((a, b) => b.slotAdet - a.slotAdet);
+
+    slotKutusu.innerHTML = "";
+    skorKutusu.innerHTML = "";
+
+    if (siraliListe.length === 0) {
+        const bosUyarisi = `<div class="text-slate-600 text-xs italic text-center pt-8">Takvimde henüz dolu slot yok.</div>`;
+        slotKutusu.innerHTML = bosUyarisi;
+        skorKutusu.innerHTML = bosUyarisi;
+        return;
+    }
+
+    siraliListe.forEach((müzisyen, index) => {
+        slotKutusu.innerHTML += `
+            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
+                <span class="font-bold text-slate-300">${müzisyen.isim}</span>
+                <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.slotAdet} Slot</span>
+            </div>`;
+
+        let dereceSimge = `<span class="w-5 text-center font-bold text-slate-500 text-[11px]">${index + 1}.</span>`;
+        if (index === 0) dereceSimge = `🏆`;
+        if (index === 1) dereceSimge = `🥈`;
+        if (index === 2) dereceSimge = `🥉`;
+
+        skorKutusu.innerHTML += `
+            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
+                <div class="flex items-center gap-2">
+                    ${dereceSimge}
+                    <span class="font-bold text-slate-200">${müzisyen.isim}</span>
+                </div>
+                <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.toplamSaat} Saat</span>
+            </div>`;
+    });
+}
+
 async function HavaDurumuGetir() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
