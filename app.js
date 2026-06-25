@@ -316,7 +316,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
                 let isim = mevcutSlotlar[gun][saat];
                 console.log(gun + " " + saat + " slotunda şu yazıyor: [" + isim + "]");
                 
-                // 3. Kontrolü esnetelim: Her türlü "Sirayet" veya "Osman"ı kabul etsin
                 let isimTemiz = isim.toString().toLowerCase().trim();
                 if(isimTemiz.includes("sirayet") || isimTemiz.includes("osman")) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
