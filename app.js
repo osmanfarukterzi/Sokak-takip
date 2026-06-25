@@ -750,3 +750,28 @@ async function HavaDurumuGetir() {
 }
 function googleGirisYap() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function cikisYap() { auth.signOut(); }
+
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // Giriş yapan kullanıcıyı global değişkene eşitliyoruz
+        window.currentUser = user; 
+        const benimIsmim = getAktifIsim(user);
+
+        // Kullanıcı giriş yaptığında veritabanında kendini "online" olarak işaretler
+        const onlineRef = db.ref("sistemde_aktif_olanlar/" + user.uid);
+        onlineRef.set({
+            isim: benimIsmim,
+            girisTarihi: Date.now()
+        });
+
+        // Tarayıcı sekmesi veya sayfa kapatıldığında Firebase bu kaydı otomatik siler
+        onlineRef.onDisconnect().remove();
+
+    } else {
+        // Eğer kullanıcı çıkış (Logout) yaparsa ismi aktif listesinden silinsin
+        if (window.currentUser) {
+            db.ref("sistemde_aktif_olanlar/" + window.currentUser.uid).remove();
+        }
+        window.currentUser = null;
+    }
+});
