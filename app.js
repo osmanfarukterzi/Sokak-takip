@@ -757,7 +757,6 @@ firebase.auth().onAuthStateChanged((user) => {
         window.currentUser = user; 
         const benimIsmim = getAktifIsim(user);
 
-        // Kullanıcı giriş yaptığında veritabanında kendini "online" olarak işaretler
         const onlineRef = db.ref("sistemde_aktif_olanlar/" + user.uid);
         onlineRef.set({
             isim: benimIsmim,
@@ -775,3 +774,44 @@ firebase.auth().onAuthStateChanged((user) => {
         window.currentUser = null;
     }
 });
+
+function AktifMuzisyenleriDinle() {
+    db.ref("sistemde_aktif_olanlar").on("value", (snapshot) => {
+        const listeKutusu = document.getElementById("aktif-muzisyenler-listesi");
+        const rozet = document.getElementById("aktif-sayisi-rozet");
+        if (!listeKutusu) return;
+
+        listeKutusu.innerHTML = "";
+        const veriler = snapshot.val();
+
+        // Eğer kimse aktif değilse
+        if (!veriler) {
+            if (rozet) rozet.innerText = "0 Aktif";
+            listeKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center py-4">Şu an kimse online değil.</div>`;
+            return;
+        }
+
+        const aktifKullanicilar = Object.values(veriler);
+        
+        // Sağ üstteki rozet sayısını güncelle (Örn: "3 Aktif")
+        if (rozet) rozet.innerText = `${aktifKullanicilar.length} Aktif`;
+
+        // Aktif olan herkesi yeşil ışık efektiyle (pulse) listele
+        aktifKullanicilar.forEach(kullanici => {
+            listeKutusu.innerHTML += `
+                <div class="flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs transition hover:border-cyan-500/30">
+                    <div class="flex items-center gap-2.5">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span class="font-bold text-slate-300">${kullanici.isim}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-500 font-medium">Sistemde</span>
+                </div>
+            `;
+        });
+    });
+}
+
+AktifMuzisyenleriDinle();
