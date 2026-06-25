@@ -332,10 +332,15 @@ function takasReddet(talepKey) {
 }
 
 function ProgramiCiz(veri) {
-    // DÜZELTME: Başlığın silinmemesi için kesin fallback koruması eklendi
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
+    
+    // Güvenlik: Veriden başlığı al, yoksa "MEYDAN SLOT TAKVİMİ" yaz
+    let baslikMetni = (veri && veri.tarih_basligi && veri.tarih_basligi.trim() !== "") 
+        ? veri.tarih_basligi 
+        : "MEYDAN SLOT TAKVİMİ";
+    
     if (baslikEl) {
-        baslikEl.innerText = (veri && veri.tarih_basligi && veri.tarih_basligi !== "") ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
+        baslikEl.innerText = baslikMetni;
     }
 
     const programAkisi = document.getElementById("program-akisi");
@@ -352,12 +357,12 @@ function ProgramiCiz(veri) {
         const saatler = ["12:00-15:00", "15:00-18:00", "18:00-21:00", "21:00-24:00"];
 
         saatler.forEach(saat => {
-            const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
+            // Veri kontrolü: aktifVeri[gun] var mı bak, yoksa boş kabul et
+            const isim = (aktifVeri[gun] && aktifVeri[gun][saat]) ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
             
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
-            const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
-            // GÜNCELLEME: Cuma günü de mor tasarım kümesine dahil edildi
+            const isHaftaIciSabit = ["Pazartesi", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             const isHaftaSonuIlk = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-slate-900 border border-slate-800"; 
@@ -365,7 +370,6 @@ function ProgramiCiz(veri) {
 
             if (isHaftaIciSabit) {
                 kartStili = "bg-amber-600/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.05)]"; 
-                // GÜNCELLEME: İçeriye kilit ikonu yerleştirildi
                 etiketHtml = `<span class="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i> SABİT</span>`;
             } else if (isHaftaSonuIlk) {
                 kartStili = "bg-purple-500/10 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.05)]"; 
@@ -389,9 +393,7 @@ function ProgramiCiz(veri) {
             slotlarHtml += `
                 <div class="p-3.5 rounded-xl flex justify-between items-center transition-all ${kartStili}">
                     <div>
-                        <span class="text-[10px] font-bold text-slate-500 block mb-0.5">
-                            ${saat} ${isHaftaIciSabit ? '<i class="fa-solid fa-lock text-[9px] text-amber-500/60 ml-1"></i>' : ''}
-                        </span>
+                        <span class="text-[10px] font-bold text-slate-500 block mb-0.5">${saat}</span>
                         <span class="font-extrabold text-sm ${isBoş ? 'text-amber-500/40 italic' : 'text-white'}">${isBoş ? 'Müsait' : isim}</span>
                     </div>
                     <div class="shrink-0">${etiketHtml}</div>
