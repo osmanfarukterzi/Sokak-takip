@@ -178,10 +178,11 @@ function VeritabaniniKontrolEtVeDinle() {
             veriler.tarih_basligi = GUNCEL_BASLIK;
         }
 
-        mevcutSlotlar = veriler;
-        ProgramiCiz(mevcutSlotlar);
-        PerformansPanosunuCiz(); 
-        CanliSahneVeGeriSayimMotoru();
+            mevcutSlotlar = veriler;
+            ProgramiCiz(mevcutSlotlar);
+            PerformansPanosunuCiz(); 
+            CanliSahneVeGeriSayimMotoru();
+            SohbetOdasiDinle();
     });
 }
 
