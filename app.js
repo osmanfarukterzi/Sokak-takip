@@ -58,13 +58,13 @@ function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
 }
 
 const varsayilanProgram = {
-    "tarih_basligi": "MEYDAN SLOT TAKVİMİ",
-    "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkan", "21:00-24:00": "Uğur" },
+    "tarih_basligi": "29 Haziran - 5 Temmuz",
+    "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkhan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
-    "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
+    "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkhan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
     "Perşembe":  { "12:00-15:00": "Mami", "15:00-18:00": "İsmet", "18:00-21:00": "Raşit", "21:00-24:00": "Sirayet" },
     "Cuma":      { "12:00-15:00": "Doğa", "15:00-18:00": "Nebi", "18:00-21:00": "Raşit", "21:00-24:00": "İsmet" },
-    "Cumartesi": { "12:00-15:00": "Mami", "15:00-18:00": "Berkan", "18:00-21:00": "Uğur", "21:00-24:00": "Sirayet" },
+    "Cumartesi": { "12:00-15:00": "Mami", "15:00-18:00": "Berkhan", "18:00-21:00": "Uğur", "21:00-24:00": "Sirayet" },
     "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Farnefes", "18:00-21:00": "Samet", "21:00-24:00": "Enes" }
 };
 
