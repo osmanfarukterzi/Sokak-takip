@@ -17,6 +17,7 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
+// Karakter hatalarından dolayı butonların bozulmasını önleyen ultra güvenli temizleyici
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
@@ -55,7 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
         anaKapsayici.appendChild(yeniDiv);
     }
 
-    // Özel Takas Arayüzü için dinamik Modal penceresi HTML'e ekleniyor (Prompt yerine bu açılacak)
     if (!document.getElementById("ozel-takas-modal")) {
         const modalDiv = document.createElement("div");
         modalDiv.id = "ozel-takas-modal";
@@ -203,7 +203,7 @@ function CanliSahneVeGeriSayimMotoru() {
         if (saat >= 0 && saat < 12) {
             kalanSaniye = sonrakiHedef - toplamGecenSaniye;
         } else {
-            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrape_hedef;
+            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrakiHedef;
         }
 
         const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
@@ -234,12 +234,11 @@ function ProgramiCiz(veri) {
 
         saatler.forEach(saat => {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
-            
-            // "BOŞ" VEYA "" GELDİĞİNDE EKRANDA ARTIK ESKİ İSİM ASLA KALMAYACAK, "MÜSAİT" YAZACAK
             const isBoş = isim === "BOŞ" || isim === "";
             const temizSlotIsmi = isimTemizle(isim);
             
-            const isOwner = currentUser && !isBoş && (temizSlotIsmi === benimIsmimTemiz);
+            // GELİŞMİŞ ESNEK EŞLEŞME: İsimler birbirini içeriyorsa (örn: "sirayet" ve "osman faruk sirayet") tam uyumlu sayılır.
+            const isOwner = currentUser && !isBoş && (temizSlotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(temizSlotIsmi));
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-[#050b18] border border-slate-800/80";
@@ -329,8 +328,11 @@ function slotBiral(gun, saat) {
             isim: "📢 BİLDİRİM",
             mesaj: `${isim}, ${gun} ${saat} slotunu boşa çıkardı.`
         });
+        // Veritabanı değiştikten sonra lokal nesneyi de anında güncelliyoruz ki arayüz takılmasın
+        if(mevcutSlotlar[gun]) mevcutSlotlar[gun][saat] = "BOŞ";
+        ProgramiCiz(mevcutSlotlar);
         alert("Slot başarıyla boşaltıldı.");
-    });
+    }).catch(err => alert("Hata oluştu: " + err.message));
 }
 
 function sahneAl(gun, saat) {
@@ -344,10 +346,11 @@ function sahneAl(gun, saat) {
             isim: "✅ YENİ SLOT",
             mesaj: `${isim}, ${gun} ${saat} slotunu aldı.`
         });
+        if(mevcutSlotlar[gun]) mevcutSlotlar[gun][saat] = "isim";
+        ProgramiCiz(mevcutSlotlar);
     });
 }
 
-// PROMPT EKRANI YERİNE AÇILAN MODERN SLOT SEÇİM PENCERESİ
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     let benimIsmim = getAktifIsim(currentUser);
@@ -358,7 +361,8 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] ? isimTemizle(mevcutSlotlar[gun][saat]) : "";
-                if(slotIsmi === benimIsmimTemiz) {
+                // Esnek eşleşme burada da devrede
+                if(slotIsmi !== "" && slotIsmi !== "bos" && (slotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(slotIsmi))) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
@@ -366,7 +370,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Önce bir slot almalısınız.`); 
+        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Önce takvimden bir slot almalısınız.`); 
         return; 
     }
     
@@ -425,9 +429,9 @@ function CanliTakaslariDinle() {
             talepVarmi = true;
 
             const targetNameTemiz = isimTemizle(req.aliciIsim);
-            const isImTarget = (targetNameTemiz === benimIsmimTemiz);
+            // Alıcı ismi eşleşme kontrolü esnekleştirildi
+            const isImTarget = (targetNameTemiz.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(targetNameTemiz));
 
-            // TAM İSTEDİĞİN O AKILLI VE ANLAŞILIR BİLDİRİM METNİ KURGULANDI:
             if(isImTarget) {
                 alani.innerHTML += `
                     <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-4 rounded-xl space-y-3 shadow-md">
