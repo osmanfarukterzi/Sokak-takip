@@ -33,7 +33,9 @@ function isimTemizle(isim) {
 
 function getAktifIsim(user) {
     if (!user) return "";
-    if (user.email === "osmanfarukterzi@gmail.com" || (user.displayName && user.displayName.toLowerCase().includes("osman"))) {
+    // DÜZELTME: Mail adresi tam eşleşmesi ve küçük/büyük harf duyarlılığı giderildi
+    let temizMail = user.email ? user.email.trim().toLowerCase() : "";
+    if (temizMail === "osmanfarukterzi@gmail.com" || (user.displayName && user.displayName.toLowerCase().includes("osman"))) {
         return BENIM_SABIT_ISGIM;
     }
     return user.displayName ? user.displayName.split(' ')[0] : "Müzisyen";
@@ -330,10 +332,10 @@ function takasReddet(talepKey) {
 }
 
 function ProgramiCiz(veri) {
-    // DÜZELTME: Veritabanındaki gerçek tarih_basligi metnini ezip yok etmemesi için düzeltildi
+    // DÜZELTME: Başlığın silinmemesi için kesin fallback koruması eklendi
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (baslikEl) {
-        baslikEl.innerText = (veri && veri.tarih_basligi) ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
+        baslikEl.innerText = (veri && veri.tarih_basligi && veri.tarih_basligi !== "") ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
     }
 
     const programAkisi = document.getElementById("program-akisi");
@@ -355,17 +357,18 @@ function ProgramiCiz(veri) {
             
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
-            const isHaftaSonuIlk = ["Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
+            // GÜNCELLEME: Cuma günü de mor tasarım kümesine dahil edildi
+            const isHaftaSonuIlk = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
             
-            // RENK GÜNCELLEMELERİ
-            let kartStili = "bg-slate-900 border border-slate-800"; // Standart Dolu Kart
+            let kartStili = "bg-slate-900 border border-slate-800"; 
             let etiketHtml = "";
 
             if (isHaftaIciSabit) {
-                kartStili = "bg-amber-600/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.05)]"; // Hafta içi sabit turuncu
+                kartStili = "bg-amber-600/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.05)]"; 
+                // GÜNCELLEME: İçeriye kilit ikonu yerleştirildi
                 etiketHtml = `<span class="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i> SABİT</span>`;
             } else if (isHaftaSonuIlk) {
-                kartStili = "bg-purple-500/10 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.05)]"; // Hafta sonu mor
+                kartStili = "bg-purple-500/10 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.05)]"; 
                 etiketHtml = `<span class="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 flex items-center gap-1"><i class="fa-solid fa-star text-[8px]"></i> HAFTA SONU</span>`;
             } else {
                 etiketHtml = `<span class="text-[9px] font-bold text-slate-500 bg-slate-500/5 px-2 py-0.5 rounded border border-slate-800 flex items-center gap-1">DÖNGÜ</span>`;
@@ -377,7 +380,7 @@ function ProgramiCiz(veri) {
                     ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-1 px-2.5 rounded-lg transition cursor-pointer shadow-sm">Sahne Al</button>`
                     : `<span class="text-[9px] text-amber-500/40 italic">Boş Slot</span>`;
             } else if (isOwner) {
-                kartStili = "bg-emerald-500/10 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.07)]"; // Senin slotların zümrüt yeşili
+                kartStili = "bg-emerald-500/10 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.07)]"; 
                 etiketHtml = `<button onclick="window.slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-rose-500/20 transition cursor-pointer font-bold">İptal Et</button>`;
             } else if (currentUser) {
                 etiketHtml = `<button onclick="window.takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[9px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-cyan-500/20 transition cursor-pointer font-bold">Takas</button>`;
@@ -386,7 +389,9 @@ function ProgramiCiz(veri) {
             slotlarHtml += `
                 <div class="p-3.5 rounded-xl flex justify-between items-center transition-all ${kartStili}">
                     <div>
-                        <span class="text-[10px] font-bold text-slate-500 block mb-0.5">${saat}</span>
+                        <span class="text-[10px] font-bold text-slate-500 block mb-0.5">
+                            ${saat} ${isHaftaIciSabit ? '<i class="fa-solid fa-lock text-[9px] text-amber-500/60 ml-1"></i>' : ''}
+                        </span>
                         <span class="font-extrabold text-sm ${isBoş ? 'text-amber-500/40 italic' : 'text-white'}">${isBoş ? 'Müsait' : isim}</span>
                     </div>
                     <div class="shrink-0">${etiketHtml}</div>
