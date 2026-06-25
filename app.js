@@ -17,10 +17,15 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
+// Kullanıcının sistemdeki asıl sahne adını döndüren güvenli fonksiyon
 function getAktifIsim(user) {
     if (!user) return "";
-    return mailToName[user.email] || user.displayName.split(' ')[0];
+    if (user.email && mailToName[user.email]) {
+        return mailToName[user.email];
+    }
+    return user.displayName ? user.displayName.split(' ')[0] : "";
 }
+
 let mevcutSlotlar = {}; 
 
 const varsayilanProgram = {
@@ -53,18 +58,19 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (user) {
             currentUser = user;
-            if(notYazanInput) notYazanInput.value = user.displayName;
+            let sistemdekiIsim = getAktifIsim(user);
+            if(notYazanInput) notYazanInput.value = sistemdekiIsim;
             if(authArea) {
                 authArea.innerHTML = `
                     <div class="flex items-center gap-2 bg-[#050b18] py-1.5 px-3 rounded-xl border border-emerald-500/30">
                         <img src="${user.photoURL}" class="w-6 h-6 rounded-full border border-emerald-500" referrerpolicy="no-referrer">
-                        <span class="text-xs font-bold text-emerald-400">${user.displayName.split(' ')[0]}</span>
+                        <span class="text-xs font-bold text-emerald-400">${sistemdekiIsim}</span>
                         <button onclick="cikisYap()" class="text-[10px] text-rose-400 ml-2 hover:underline cursor-pointer">Çıkış</button>
                     </div>
                 `;
             }
             db.ref("muzisyenler/" + user.uid).update({
-                name: user.displayName.includes("Osman Faruk") ? "Sirayet" : user.displayName.split(' ')[0],
+                name: sistemdekiIsim,
                 picture: user.photoURL,
                 lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
@@ -181,7 +187,7 @@ function ProgramiCiz(veri) {
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
 
-    let userGroupKey = currentUser && currentUser.displayName ? currentUser.displayName.toLowerCase() : "";
+    let benimIsmim = currentUser ? getAktifIsim(currentUser).toLowerCase() : "";
 
     gunler.forEach(gun => {
         let slotlarHtml = "";
@@ -190,13 +196,10 @@ function ProgramiCiz(veri) {
         saatler.forEach(saat => {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
-            const güvenliIsim = isim.toLowerCase();
+            const temizSlotIsmi = isim.toLowerCase().trim();
             
-            const isOwner = currentUser && (
-                userGroupKey.includes(güvenliIsim) || 
-                (güvenliIsim.includes("sirayet") && userGroupKey.includes("osman faruk")) ||
-                (güvenliIsim.includes("faruk") && userGroupKey.includes("osman faruk"))
-            );
+            // SAHİPLİK KONTROLÜ: Tam eşleşme (Sirayet === sirayet)
+            const isOwner = currentUser && (temizSlotIsmi === benimIsmim);
 
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
             
@@ -278,7 +281,7 @@ function slotBiral(gun, saat) {
     if (!currentUser) return;
     let isim = getAktifIsim(currentUser);
     
-    if (!confirm(`${gun} ${saat} slotunu "${isim}" olarak boşaltmak istediğine emin misin?`)) return;
+    if (!confirm(`${gun} ${saat} slotunu boşaltmak istediğine emin misin?`)) return;
 
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
         db.ref("notlar").push({
@@ -286,7 +289,7 @@ function slotBiral(gun, saat) {
             mesaj: `${isim}, ${gun} ${saat} slotunu boşa çıkardı.`
         });
         alert("Slot başarıyla boşaltıldı.");
-    });
+    }).catch(e => alert("Hata oluştu: " + e.message));
 }
 
 function sahneAl(gun, saat) {
@@ -305,14 +308,14 @@ function sahneAl(gun, saat) {
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    let benimIsmim = "sirayet"; 
+    let benimIsmim = getAktifIsim(currentUser); 
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] ? mevcutSlotlar[gun][saat].toString().toLowerCase().trim() : "";
-                if(slotIsmi === benimIsmim) {
+                if(slotIsmi === benimIsmim.toLowerCase().trim()) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
@@ -320,7 +323,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Slot listesinde 'Sirayet' ismini bulamadım. Konsola bak, orada ne görüyorsun?"); 
+        alert(`Sistemde '${benimIsmim}' adına kayıtlı aktif bir slot bulunamadı! Önce bir slot aldığından emin ol.`); 
         return; 
     }
     
@@ -336,7 +339,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
 
     db.ref("takas_talepleri").push().set({
         gonderenUid: currentUser.uid,
-        gonderenIsim: "Sirayet",
+        gonderenIsim: benimIsmim,
         gonderenGun: bSlot.gun,
         gonderenSaat: bSlot.saat,
         aliciIsim: karsiMuzisyen,
@@ -344,7 +347,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas talebin 'Sirayet' olarak gönderildi!");
+    alert("Takas talebiniz karşı tarafa iletildi!");
 }
 
 function CanliTakaslariDinle() {
@@ -357,21 +360,20 @@ function CanliTakaslariDinle() {
         if(!t) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4">Aktif takas teklifi yok.</p>`; return; }
         
         let talepVarmi = false;
-        let userGroupKey = currentUser && currentUser.displayName ? currentUser.displayName.toLowerCase() : "";
-        let benimSahneIsmim = userGroupKey.includes("osman faruk") ? "sirayet" : userGroupKey;
+        let benimSahneIsmim = currentUser ? getAktifIsim(currentUser).toLowerCase().trim() : "";
 
         Object.keys(t).forEach(key => {
             const req = t[key];
             if(req.durum !== "beklemede") return;
             talepVarmi = true;
 
-            const targetName = req.aliciIsim.toLowerCase();
-            const isImTarget = benimSahneIsmim.includes(targetName) || targetName.includes(benimSahneIsmim);
+            const targetName = req.aliciIsim.toLowerCase().trim();
+            const isImTarget = (benimSahneIsmim === targetName);
 
             if(isImTarget) {
                 alani.innerHTML += `
-                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md animate-pulse">
-                        <p class="text-slate-200 leading-relaxed">
+                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md">
+                        <p class="text-slate-200 leading-relaxed text-xs">
                             <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunu, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotuyla değiştirmek istiyor.
                         </p>
                         <div class="flex gap-2 pt-1">
@@ -439,6 +441,8 @@ function CanliVerileriDinle() {
         if (!liste) return; liste.innerHTML = "";
         const v = snapshot.val();
         if(!v) return;
+        
+        // Aktif müzisyen sayısını doğru göstermek için tekilleştirilmiş liste
         Object.keys(v).forEach(k => {
             liste.innerHTML += `
                 <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60">
@@ -453,7 +457,7 @@ function notEkle() {
     if (!currentUser) return;
     const mesajEl = document.getElementById("not-icerik");
     if (!mesajEl.value.trim()) return;
-    db.ref("notlar").push({ uid: currentUser.uid, isim: currentUser.displayName.toLowerCase().includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0], mesaj: mesajEl.value.trim() });
+    db.ref("notlar").push({ uid: currentUser.uid, isim: getAktifIsim(currentUser), mesaj: mesajEl.value.trim() });
     mesajEl.value = "";
 }
 
