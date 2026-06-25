@@ -305,8 +305,6 @@ function sahneAl(gun, saat) {
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    
-    // Veritabanındaki isminle birebir aynı olduğundan emin olalım
     let benimIsmim = "sirayet"; 
     let benimSlotlarim = [];
 
@@ -314,7 +312,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] ? mevcutSlotlar[gun][saat].toString().toLowerCase().trim() : "";
-                
                 if(slotIsmi === benimIsmim) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
@@ -323,7 +320,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Sistemde 'sirayet' adına kayıtlı slot bulunamadı. Lütfen slot listesini kontrol et."); 
+        alert("Slot listesinde 'Sirayet' ismini bulamadım. Konsola bak, orada ne görüyorsun?"); 
         return; 
     }
     
@@ -347,7 +344,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas talebin gönderildi!");
+    alert("Takas talebin 'Sirayet' olarak gönderildi!");
 }
 
 function CanliTakaslariDinle() {
