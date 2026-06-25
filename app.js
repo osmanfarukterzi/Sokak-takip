@@ -187,7 +187,8 @@ function ProgramiCiz(veri) {
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
 
-    let benimIsmim = currentUser ? getAktifIsim(currentUser).toLowerCase() : "";
+    // BURASI DÜZELTİLDİ: Kullanıcının ismi artık doğrudan mail sözlüğünden çekiliyor!
+    let benimIsmim = currentUser ? getAktifIsim(currentUser).toLowerCase().trim() : "";
 
     gunler.forEach(gun => {
         let slotlarHtml = "";
@@ -442,7 +443,6 @@ function CanliVerileriDinle() {
         const v = snapshot.val();
         if(!v) return;
         
-        // Aktif müzisyen sayısını doğru göstermek için tekilleştirilmiş liste
         Object.keys(v).forEach(k => {
             liste.innerHTML += `
                 <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60">
