@@ -39,16 +39,23 @@ function getAktifIsim(user) {
     return user.displayName ? user.displayName.split(' ')[0] : "Müzisyen";
 }
 
-// DÜZELTME: Farnefes koruması eklendi, artık seninle asla karışmaz
+// KESİN ÇÖZÜM: Farnefes ve Faruk kelimelerini tamamen birbirinden ayırdık
 function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
     let temizSlot = isimTemizle(slotIsmi);
     let temizKullanici = isimTemizle(kullanıcıIsmi);
     
-    if (temizSlot.includes("farnefes")) return false; // Kesinlikle senin değil
-    
-    if (temizKullanici === "sirayet" || temizKullanici === "osman" || temizKullanici === "faruk") {
-        return temizSlot.includes("sirayet") || temizSlot.includes("osman") || temizSlot.includes("faruk");
+    // Eğer slot adında farnefes geçiyorsa kesinlikle senin DEĞİLDİR.
+    if (temizSlot.includes("farnefes")) {
+        return false; 
     }
+    
+    // Sen giriş yaptığında sana ait sayılacak kelimeler
+    if (temizKullanici === "sirayet" || temizKullanici === "osman" || temizKullanici === "faruk") {
+        // Eğer slot "faruk" ise ve "farnefes" içermiyorsa senindir (Örn: Sadece Faruk yazıyorsa)
+        if (temizSlot === "faruk") return true;
+        return temizSlot.includes("sirayet") || temizSlot.includes("osman");
+    }
+    
     return temizSlot === temizKullanici;
 }
 
@@ -90,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.takasTalebiGonder = takasTalebiGonder;
     window.takasOnayla = takasOnayla;
     window.takasReddet = takasReddet;
-    window.takasIptalEt = takasIptalEt; // Yeni iptal fonksiyonunu bağladık
+    window.takasIptalEt = takasIptalEt;
     window.notEkle = notEkle;
 
     VeritabaniniKontrolEtVeDinle();
@@ -235,7 +242,6 @@ function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
     }).catch(err => alert("Talep gönderilemedi: " + err.message));
 }
 
-// EKLEME: Gönderdiğin takas teklifini anında iptal eden yeni fonksiyon
 function takasIptalEt(talepKey) {
     if(!confirm("Gönderdiğiniz bu takas teklifini geri çekmek istediğinize emin misiniz?")) return;
     db.ref(`takas_talepleri/${talepKey}`).remove().then(() => {
@@ -275,7 +281,6 @@ function CanliTakaslariDinle() {
                         </div>
                     </div>`;
             } else {
-                // DÜZELTME: Eğer teklifi gönderen sensen, yanına konforlu bir "Teklifi İptal Et" butonu yerleşiyor
                 let iptalButonHtml = "";
                 if (isImSender) {
                     iptalButonHtml = `<button onclick="window.takasIptalEt('${key}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold px-2 py-1 rounded border border-rose-500/20 transition cursor-pointer ml-2">İptal Et</button>`;
