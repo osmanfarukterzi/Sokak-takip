@@ -306,8 +306,7 @@ function sahneAl(gun, saat) {
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     
-    // Veritabanındaki isminle birebir aynı olduğundan emin olalım
-    let benimIsmim = "sirayet"; 
+    let benimIsmim = "Sirayet"; 
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
