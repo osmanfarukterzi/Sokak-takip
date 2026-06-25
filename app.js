@@ -322,7 +322,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Sistemde 'sirayet' adına kayıtlı slot bulunamadı. Lütfen slot listesini kontrol et."); 
+        alert("Sistemde 'Sirayet' adına kayıtlı slot bulunamadı. Lütfen slot listesini kontrol et."); 
         return; 
     }
     
