@@ -147,10 +147,21 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
+        
+        // BAŞLIK İÇİN KESİN ÇÖZÜM: 
+        // Veritabanında ne olursa olsun veya boşsa, başlığı biz zorla buraya yazıyoruz
+        const GUNCEL_BASLIK = "29 Haziran - 5 Temmuz";
+        
         if (!veriler || Object.keys(veriler).length === 0) {
-            db.ref("haftalik_slotlar").set(varsayilanProgram);
-            veriler = varsayilanProgram;
+            let baslangic = { ...varsayilanProgram };
+            baslangic.tarih_basligi = GUNCEL_BASLIK;
+            db.ref("haftalik_slotlar").set(baslangic);
+            veriler = baslangic;
+        } else {
+            // Var olan veriyi bozma ama başlığı zorla güncelle
+            veriler.tarih_basligi = GUNCEL_BASLIK;
         }
+
         mevcutSlotlar = veriler;
         ProgramiCiz(mevcutSlotlar);
         PerformansPanosunuCiz(); 
