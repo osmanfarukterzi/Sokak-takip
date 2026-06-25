@@ -775,6 +775,21 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
+function eylemKaydet(mesaj) {
+    db.ref("meydan_eylemleri").push({
+        metin: mesaj,
+        tarih: Date.now()
+    });
+}
+
+// Örnek takas reddetme fonksiyonu içi:
+function takasReddet(takasId, teklifEden, talepEdilen) {
+    db.ref("takas_talepleri/" + takasId).remove().then(() => {
+        // Reddedilme bilgisini eylem günlüğüne gönderiyoruz
+        eylemKaydet(`${window.currentUser ? getAktifIsim(window.currentUser) : 'Bir müzisyen'}, ${teklifEden} tarafından gelen takas teklifini reddetti.`);
+    });
+}
+
 function AktifMuzisyenleriDinle() {
     db.ref("sistemde_aktif_olanlar").on("value", (snapshot) => {
         const listeKutusu = document.getElementById("aktif-muzisyenler-listesi");
@@ -814,4 +829,33 @@ function AktifMuzisyenleriDinle() {
     });
 }
 
+function MeydanEylemleriniDinle() {
+    db.ref("meydan_eylemleri").limitToLast(20).on("value", (snapshot) => {
+        const logKutusu = document.getElementById("meydan-eylemleri-log");
+        if (!logKutusu) return;
+
+        logKutusu.innerHTML = "";
+        const veriler = snapshot.val();
+
+        if (!veriler) {
+            logKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center py-4">Henüz bir hareketlilik yok.</div>`;
+            return;
+        }
+
+        // En son yapılan eylemler en üstte görünecek şekilde ters çeviriyoruz
+        Object.values(veriler).reverse().forEach(eylem => {
+            const saat = new Date(eylem.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            
+            logKutusu.innerHTML += `
+                <div class="p-2 bg-slate-900/40 border border-slate-800/60 rounded-xl flex gap-2 items-start">
+                    <span class="text-slate-500 font-mono text-[10px] pt-0.5">${saat}</span>
+                    <span class="text-slate-300">${eylem.metin}</span>
+                </div>
+            `;
+        });
+    });
+}
+
+// Sayfa açıldığında dinlemeyi başlat
+MeydanEylemleriniDinle();
 AktifMuzisyenleriDinle();
