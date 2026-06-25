@@ -32,13 +32,29 @@ function isimTemizle(isim) {
 }
 
 function getAktifIsim(user) {
-    if (!user) return "";
-    // DÜZELTME: Mail adresi tam eşleşmesi ve küçük/büyük harf duyarlılığı giderildi
-    let temizMail = user.email ? user.email.trim().toLowerCase() : "";
-    if (temizMail === "osmanfarukterzi@gmail.com" || (user.displayName && user.displayName.toLowerCase().includes("osman"))) {
-        return BENIM_SABIT_ISGIM;
-    }
-    return user.displayName ? user.displayName.split(' ')[0] : "Müzisyen";
+    if (!user || !user.email) return "";
+    
+    // E-postayı her ihtimale karşı küçük harfe çevirip boşluklarını temizliyoruz
+    const email = user.email.toLowerCase().trim();
+    
+    // E-posta ve Müzisyen eşleştirme tablosu
+    const muzisyenler = {
+        "osmanfarukterzi@gmail.com": "Sirayet",
+        "mamiiibennn@gmail.com": "Mami",
+        "berkhan54d@gmail.com": "Berkhan",
+        "ugurpoyrazz93@gmail.com": "Uğur",
+        "y.kuloglu53@gmail.com": "Yiğit",
+        "faruk.kayya@gmail.com": "Farnefes",
+        "ismtadymn0667@gmail.com": "İsmet",
+        "infoenesozdmr@gmail.com": "Enes",
+        "cannebigs@gmail.com": "Nebi",
+        "dogadenizyilmaz@gmail.com": "Doğa",
+        "harbidensametofficial@gmail.com": "Samet",
+        "orsun52@gmail.com": "Raşit"
+    };
+
+    // Eğer e-posta listede varsa sahne adını döndür, yoksa mailin ilk kısmını göster
+    return muzisyenler[email] || email.split('@')[0];
 }
 
 function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
