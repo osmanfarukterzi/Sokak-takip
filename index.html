@@ -51,7 +51,6 @@
 
     <main class="flex-1 max-w-[1800px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 xl:grid-cols-4 gap-8">
         
-        <!-- SOL SÜTUN -->
         <div class="xl:col-span-1 space-y-6">
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-5 shadow-xl">
                 <h3 class="font-bold text-sm text-orange-500 uppercase tracking-wider flex items-center gap-2 mb-3">
@@ -95,13 +94,9 @@
                 </div>
                 
                 <div id="aktif-muzisyenler-listesi" class="space-y-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
-                    <!-- Aktif müzisyenler JavaScript ile buraya dolacak -->
-                </div>
+                    </div>
             </div>
-        </div> <!-- Kılavuz Etiket: Sol sütunun eksik olan ve tasarımı bozan kapanışı burasıydı, eklendi! -->
-
-        <!-- SAĞ SÜTUN -->
-        <div class="xl:col-span-3 space-y-6 overflow-hidden">
+        </div> <div class="xl:col-span-3 space-y-6 overflow-hidden">
             
             <div id="canli-sahne-tabelasi" class="bg-gradient-to-r from-[#0b1329] via-[#0f1d3a] to-[#0b1329] border border-orange-500/30 rounded-2xl p-6 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 transition-all">
                 <div class="flex items-center gap-4 text-center sm:text-left">
@@ -118,14 +113,11 @@
             </div>
 
             <div id="program-akisi" class="flex gap-5 overflow-x-auto pb-6 pt-1 snap-x scroll-smooth outline-none">
-                <!-- Günlük takvim kartları buraya yüklenecek -->
-            </div>
+                </div>
         </div>
 
-        <!-- ALT SATIR: MEYDAN SOHBET VE İSTATİSTİK PANELLERİ (4 sütunu da kaplayarak alta tam oturur) -->
         <div class="xl:col-span-4 grid grid-cols-1 lg:grid-cols-3 gap-6 mt-2 pb-6">
             
-            <!-- KIRMIZI KUTU: CANLI MEYDAN SOHBETİ -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-4 flex flex-col h-[320px] shadow-xl">
                 <div class="border-b border-slate-800 pb-2 mb-3 flex justify-between items-center">
                     <span class="font-bold text-sm text-white flex items-center gap-2">
@@ -134,15 +126,13 @@
                     <span class="text-[10px] text-slate-500 bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-full border border-rose-500/20 font-bold">Canlı</span>
                 </div>
                 <div id="sohbet-mesajlari" class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-sm scrollbar-thin mb-3">
-                    <!-- Mesajlar JS ile buraya dolacak -->
-                </div>
+                    </div>
                 <div class="flex gap-2">
                     <input type="text" id="sohbet-girdi" placeholder="Meydana bir mesaj bırak..." class="flex-1 bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 transition">
                     <button onclick="MeydanaMesajGonder()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition cursor-pointer shadow-md">Gönder</button>
                 </div>
             </div>
 
-            <!-- MOR KUTU: HAFTALIK SLOT DAĞILIMI -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-4 flex flex-col h-[320px] shadow-xl">
                 <div class="border-b border-slate-800 pb-2 mb-3">
                     <span class="font-bold text-sm text-white flex items-center gap-2">
@@ -150,11 +140,9 @@
                     </span>
                 </div>
                 <div id="haftalik-slot-sayilari" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scroll">
-                    <!-- Veriler JS ile dolacak -->
-                </div>
+                    </div>
             </div>
 
-            <!-- KAHVERENGİ KUTU: PERFORMANS & SKOR TABLOSU -->
             <div class="bg-[#0b1329] border border-slate-800 rounded-2xl p-4 flex flex-col h-[320px] shadow-xl">
                 <div class="border-b border-slate-800 pb-2 mb-3">
                     <span class="font-bold text-sm text-white flex items-center gap-2">
@@ -162,8 +150,7 @@
                     </span>
                 </div>
                 <div id="skor-tablosu" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scroll">
-                    <!-- Skorlar JS ile dolacak -->
-                </div>
+                    </div>
             </div>
 
         </div>
