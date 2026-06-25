@@ -17,9 +17,8 @@ const auth = firebase.auth();
 
 let currentUser = null;
 let mevcutSlotlar = {}; 
-const BENIM_SABIT_ISGIM = "Sirayet"; // Seni sistemde tek bir isimle sabitliyoruz
+const BENIM_SABIT_ISGIM = "Sirayet"; 
 
-// İsim temizleme ve esnek eşleştirme fonksiyonu
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
@@ -32,22 +31,21 @@ function isimTemizle(isim) {
         .replace(/ö/g, 'o');
 }
 
-// Giriş yapan kullanıcının adını kontrol eden fonksiyon
 function getAktifIsim(user) {
     if (!user) return "";
-    // Eğer giriş yapan kişi sensen, ne olursa olsun ismini "Sirayet" yapıyoruz
     if (user.email === "osmanfarukterzi@gmail.com" || (user.displayName && user.displayName.toLowerCase().includes("osman"))) {
         return BENIM_SABIT_ISGIM;
     }
     return user.displayName ? user.displayName.split(' ')[0] : "Müzisyen";
 }
 
-// Slotun sana ait olup olmadığını hatasız kontrol eden mantık
+// DÜZELTME: Farnefes koruması eklendi, artık seninle asla karışmaz
 function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
     let temizSlot = isimTemizle(slotIsmi);
     let temizKullanici = isimTemizle(kullanıcıIsmi);
     
-    // Eğer giriş yapan sensen, slotta Sirayet, Osman veya Faruk yazıyorsa senindir
+    if (temizSlot.includes("farnefes")) return false; // Kesinlikle senin değil
+    
     if (temizKullanici === "sirayet" || temizKullanici === "osman" || temizKullanici === "faruk") {
         return temizSlot.includes("sirayet") || temizSlot.includes("osman") || temizSlot.includes("faruk");
     }
@@ -65,7 +63,6 @@ const varsayilanProgram = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Eksik olabilecek tüm HTML alanlarını ve takas pencerelerini dinamik olarak oluşturuyoruz
     if (!document.getElementById("ozel-takas-modal")) {
         const modalDiv = document.createElement("div");
         modalDiv.id = "ozel-takas-modal";
@@ -85,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(modalDiv);
     }
 
-    // Fonksiyonları dışarıya (window) açıyoruz ki buton click'leri doğrudan tetiklenebilsin
     window.googleGirisYap = googleGirisYap;
     window.cikisYap = cikisYap;
     window.sahneAl = sahneAl;
@@ -94,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.takasTalebiGonder = takasTalebiGonder;
     window.takasOnayla = takasOnayla;
     window.takasReddet = takasReddet;
+    window.takasIptalEt = takasIptalEt; // Yeni iptal fonksiyonunu bağladık
     window.notEkle = notEkle;
 
     VeritabaniniKontrolEtVeDinle();
@@ -153,21 +150,18 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-// DIREKT SAHNE ALMA (Yazı yazmak yok, konforlu tıkla-al)
 function sahneAl(gun, saat) {
     if (!currentUser) { alert("Lütfen önce Google ile giriş yapın."); return; }
     let isim = getAktifIsim(currentUser);
 
-    // Sorunsuz ve hızlıca veritabanını güncelliyoruz, arayüz otomatik yenilenecek
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
         db.ref("notlar").push({
             isim: "✅ YENİ SLOT",
             mesaj: `${isim}, ${gun} ${saat} slotunu tek tıkla rezerve etti.`
         });
-    }).catch(err => alert("Rezervasyon sırasında bir hata oluştu: " + err.message));
+    }).catch(err => alert("Hata: " + err.message));
 }
 
-// DIREKT IPTAL ETME (Saniyeler içinde slottan adını siler ve rengini değiştirir)
 function slotBiral(gun, saat) {
     if (!currentUser) return;
     let isim = getAktifIsim(currentUser);
@@ -180,13 +174,11 @@ function slotBiral(gun, saat) {
     }).catch(err => alert("Hata: " + err.message));
 }
 
-// TAKAS PENCERESİNİ TETİKLEYEN ANA MOTOR
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) { alert("Takas yapabilmek için giriş yapmalısınız."); return; }
     let benimIsmim = getAktifIsim(currentUser);
     let benimSlotlarim = [];
 
-    // Mevcut program taranarak doğrudan "SANA" ait slotlar filtreleniyor
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
@@ -213,7 +205,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     slotlarAlani.innerHTML = "";
 
     benimSlotlarim.forEach(item => {
-        // Tıklama anında doğrudan takas talebini Firebase'e fırlatacak konforlu butonlar
         slotlarAlani.innerHTML += `
             <button onclick="window.takasTalebiGonder('${item.gun}', '${item.saat}', '${karsiMuzisyen}', '${karsiGun}', '${karsiSaat}')" 
                 class="w-full text-left bg-[#050b18] hover:bg-cyan-950/50 border border-slate-800 hover:border-cyan-500/50 p-3 rounded-xl text-xs text-white transition font-semibold flex justify-between items-center cursor-pointer group shadow-sm">
@@ -226,7 +217,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     modal.classList.remove("hidden");
 }
 
-// TAKAS TALEBİNİ DOĞRUDAN FIREBASE'E YAZAN VE SOL TARAFI TETİKLEYEN FONKSİYON
 function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
     document.getElementById("ozel-takas-modal").classList.add("hidden");
     let benimIsmim = getAktifIsim(currentUser);
@@ -245,7 +235,14 @@ function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
     }).catch(err => alert("Talep gönderilemedi: " + err.message));
 }
 
-// SOL TARAFTAKİ VEYA EKRANDAKİ TAKAS PANELİNİ CANLI DİNLEYEN VE GÜNCELLEYEN YAPI
+// EKLEME: Gönderdiğin takas teklifini anında iptal eden yeni fonksiyon
+function takasIptalEt(talepKey) {
+    if(!confirm("Gönderdiğiniz bu takas teklifini geri çekmek istediğinize emin misiniz?")) return;
+    db.ref(`takas_talepleri/${talepKey}`).remove().then(() => {
+        alert("Takas teklifiniz başarıyla iptal edildi.");
+    });
+}
+
 function CanliTakaslariDinle() {
     db.ref("takas_talepleri").on("value", snapshot => {
         const alani = document.getElementById("canli-takas-talepleri-alani");
@@ -263,13 +260,12 @@ function CanliTakaslariDinle() {
             if(req.durum !== "beklemede") return;
             talepVarmi = true;
 
-            // Teklifin hedefindeki kişi sen misin kontrolü
             const isImTarget = benimSlotumMu(req.aliciIsim, benimIsim);
+            const isImSender = req.gonderenUid === (currentUser ? currentUser.uid : null) || benimSlotumMu(req.gonderenIsim, benimIsim);
 
             if(isImTarget) {
-                // Eğer teklif sanaysa Kabul Et / Reddet butonları konforlu şekilde listelenir
                 alani.innerHTML += `
-                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-4 rounded-xl space-y-3 shadow-lg animate-pulse">
+                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-4 rounded-xl space-y-3 shadow-lg">
                         <p class="text-xs text-slate-200 leading-relaxed">
                             <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunu, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotuyla değiştirmek istiyor.
                         </p>
@@ -279,14 +275,21 @@ function CanliTakaslariDinle() {
                         </div>
                     </div>`;
             } else {
-                // Diğer bekleyen teklifler durum takibi için sol tarafta listelenir
+                // DÜZELTME: Eğer teklifi gönderen sensen, yanına konforlu bir "Teklifi İptal Et" butonu yerleşiyor
+                let iptalButonHtml = "";
+                if (isImSender) {
+                    iptalButonHtml = `<button onclick="window.takasIptalEt('${key}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold px-2 py-1 rounded border border-rose-500/20 transition cursor-pointer ml-2">İptal Et</button>`;
+                }
+
                 alani.innerHTML += `
                     <div class="bg-[#050b18] p-3 rounded-xl border border-slate-800 text-slate-400 text-[11px] mb-2 shadow-sm flex items-center justify-between">
                         <div>
                             <span class="text-slate-300 font-bold">${req.gonderenIsim}</span> ➔ <span class="text-slate-300 font-bold">${req.aliciIsim}</span>
                             <div class="text-[10px] text-slate-500 mt-0.5">${req.gonderenGun} ⇄ ${req.aliciGun}</div>
                         </div>
-                        <span class="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 flex items-center gap-1"><i class="fa-solid fa-spinner animate-spin"></i> Bekliyor</span>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${iptalButonHtml ? iptalButonHtml : `<span class="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 flex items-center gap-1"><i class="fa-solid fa-spinner animate-spin"></i> Bekliyor</span>`}
+                        </div>
                     </div>`;
             }
         });
@@ -322,7 +325,6 @@ function takasReddet(talepKey) {
     });
 }
 
-// PROGRAMI EKRANA ÇİZEN VE RENKLERİ ANINDA GÜNCELLEYEN GÖRSEL MOTOR
 function ProgramiCiz(veri) {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (baslikEl) baslikEl.innerText = "MEYDAN SLOT TAKVİMİ";
@@ -344,7 +346,6 @@ function ProgramiCiz(veri) {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
             
-            // İsmin sana ait olup olmadığını kontrol ediyoruz
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
@@ -358,17 +359,14 @@ function ProgramiCiz(veri) {
             }
 
             if (isBoş) {
-                // Boş slotlar için konforlu direkt Sahne Al butonu
                 kartStili = "bg-amber-500/5 border border-dashed border-amber-500/30";
                 etiketHtml = currentUser 
                     ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-1 px-2.5 rounded-lg transition cursor-pointer shadow-sm">Sahne Al</button>`
                     : `<span class="text-[9px] text-amber-500/40 italic">Boş Slot</span>`;
             } else if (isOwner) {
-                // Sana ait slot yeşil olur ve tek tıkla İptal Et butonu barındırır
                 kartStili = "bg-emerald-500/10 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]";
                 etiketHtml = `<button onclick="window.slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-rose-500/20 transition cursor-pointer font-bold">İptal Et</button>`;
             } else if (currentUser) {
-                // Başkasına ait slotlar için direkt Takas Butonu
                 etiketHtml = `<button onclick="window.takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[9px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-cyan-500/20 transition cursor-pointer font-bold">Takas</button>`;
             }
 
@@ -431,7 +429,6 @@ function CanliSahneVeGeriSayimMotoru() {
     const sayacYazi = document.getElementById("canli-geri-sayim");
     const sayacEtiket = document.getElementById("sayac-etiket");
     const canliIsik = document.getElementById("canli-isik");
-    const tabela = document.getElementById("canli-sahne-tabelasi");
 
     if (!sahneYazi || !sayacYazi) return;
 
