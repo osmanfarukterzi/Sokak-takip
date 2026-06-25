@@ -208,10 +208,10 @@ window.sahneAl = function(gun, saat) {
     });
 
     // 2. ADIM: Kural Kontrolü (Maksimum 2 Slot)
-    if (toplamSlotSayim >= 2) {
-        alert(`Hop ${benimIsmim}! Meydan kuralları gereği bir kişi haftada en fazla 2 slot alabilir. Sen zaten 2 slotunu doldurmuşsun!`);
-        return; // İşlemi iptal et, veritabanına yazdırma
-    }
+   if (kullaniciSlotSayisi >= 5) {
+    alert(`Hop ${benimIsmim}! Meydan kuralları gereği ekstra en fazla 2 slot alabilirsin. Toplam slot sınırın (5) dolmuştur!`);
+    return;
+}
 
     // 3. ADIM: Eğer kuralı ihlal etmiyorsa slotu rezerve et
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim)
