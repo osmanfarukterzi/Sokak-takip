@@ -84,6 +84,14 @@ const varsayilanProgram = {
     "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Farnefes", "18:00-21:00": "Samet", "21:00-24:00": "Enes" }
 };
 
+// --- YENİ EKLENEN: Eylem Kaydetme Fonksiyonu ---
+function eylemKaydet(mesaj) {
+    db.ref("meydan_eylemleri").push({
+        metin: mesaj,
+        tarih: Date.now()
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     if (!document.getElementById("ozel-takas-modal")) {
         const modalDiv = document.createElement("div");
@@ -165,7 +173,6 @@ function VeritabaniniKontrolEtVeDinle() {
         let veriler = snapshot.val();
         
         // BAŞLIK İÇİN KESİN ÇÖZÜM: 
-        // Veritabanında ne olursa olsun veya boşsa, başlığı biz zorla buraya yazıyoruz
         const GUNCEL_BASLIK = "29 Haziran - 5 Temmuz";
         
         if (!veriler || Object.keys(veriler).length === 0) {
@@ -174,18 +181,18 @@ function VeritabaniniKontrolEtVeDinle() {
             db.ref("haftalik_slotlar").set(baslangic);
             veriler = baslangic;
         } else {
-            // Var olan veriyi bozma ama başlığı zorla güncelle
             veriler.tarih_basligi = GUNCEL_BASLIK;
         }
 
-            mevcutSlotlar = veriler;
-            ProgramiCiz(mevcutSlotlar);
-            PerformansPanosunuCiz(); 
-            CanliSahneVeGeriSayimMotoru();
-            SohbetOdasiDinle();
+        mevcutSlotlar = veriler;
+        ProgramiCiz(mevcutSlotlar);
+        PerformansPanosunuCiz(); 
+        CanliSahneVeGeriSayimMotoru();
+        SohbetOdasiDinle();
     });
 }
 
+// --- DÜZELTME: Sahne Al Fonksiyonu (5 Slot Sınırı ve Log) ---
 window.sahneAl = function(gun, saat) {
     if (!currentUser) {
         alert("Slot alabilmek için önce giriş yapmalısın!");
@@ -196,7 +203,6 @@ window.sahneAl = function(gun, saat) {
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     let toplamSlotSayim = 0;
 
-    // 1. ADIM: Mevcut programı tara ve bu müzisyenin kaç slotu var say
     gunler.forEach(g => {
         if (mevcutSlotlar && mevcutSlotlar[g]) {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
@@ -207,18 +213,14 @@ window.sahneAl = function(gun, saat) {
         }
     });
 
-    // 2. ADIM: Kural Kontrolü (Maksimum 2 Slot)
-   if (kullaniciSlotSayisi >= 5) {
-    alert(`Hop ${benimIsmim}! Meydan kuralları gereği ekstra en fazla 2 slot alabilirsin. Toplam slot sınırın (5) dolmuştur!`);
-    return;
-}
+    if (toplamSlotSayim >= 5) {
+        alert(`Hop ${benimIsmim}! Meydan kuralları gereği ekstra en fazla 2 slot alabilirsin. Toplam slot sınırın (5) dolmuştur!`);
+        return;
+    }
 
-    // 3. ADIM: Eğer kuralı ihlal etmiyorsa slotu rezerve et
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim)
         .then(() => {
-            // İsteğe bağlı: Panoya otomatik bildirim düşür
-            const bildirimMetni = `✅ YENİ SLOT: ${benimIsmim}, ${gun} ${saat} slotunu tek tıkla rezerve etti.`;
-            // Eğer bildirim panon Firebase'e bağlıysa buraya push kodu ekleyebilirsin
+            eylemKaydet(`✅ ${benimIsmim}, ${gun} ${saat} slotunu rezerve etti.`);
             console.log("Slot başarıyla alındı.");
         })
         .catch((error) => {
@@ -231,6 +233,7 @@ function slotBiral(gun, saat) {
     let isim = getAktifIsim(currentUser);
 
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
+        eylemKaydet(`📢 ${isim}, ${gun} ${saat} slotunu boşalttı.`);
         db.ref("notlar").push({
             isim: "📢 BİLDİRİM",
             mesaj: `${isim}, ${gun} ${saat} slotunu boşalttı. Slot şu an rezerve edilebilir!`
@@ -295,6 +298,7 @@ function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
         aliciSaat: kSaat,
         durum: "beklemede"
     }).then(() => {
+        eylemKaydet(`⏳ ${benimIsmim}, ${kMuzisyen} isimli müzisyene takas teklifi gönderdi.`);
         alert("Takas talebiniz karşı tarafa anında iletildi ve panoya eklendi!");
     }).catch(err => alert("Talep gönderilemedi: " + err.message));
 }
@@ -360,6 +364,7 @@ function CanliTakaslariDinle() {
     });
 }
 
+// --- DÜZELTME: Takas Onay ve Ret Fonksiyonları (Loglu) ---
 function takasOnayla(talepKey) {
     db.ref(`takas_talepleri/${talepKey}`).once("value", snapshot => {
         const req = snapshot.val();
@@ -371,6 +376,7 @@ function takasOnayla(talepKey) {
         guncelleme[`takas_talepleri/${talepKey}/durum`] = "onaylandi";
 
         db.ref().update(guncelleme).then(() => {
+            eylemKaydet(`🔄 TAKAS BAŞARILI: ${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini takas etti.`);
             db.ref("notlar").push({
                 uid: "sistem",
                 isim: "🔄 TAKAS BAŞARILI",
@@ -382,8 +388,15 @@ function takasOnayla(talepKey) {
 }
 
 function takasReddet(talepKey) {
-    db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi").then(() => {
-        alert("Takas teklifi reddedildi.");
+    db.ref(`takas_talepleri/${talepKey}`).once("value", snapshot => {
+        const req = snapshot.val();
+        if(!req) return;
+        
+        db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi").then(() => {
+            let benimIsmim = currentUser ? getAktifIsim(currentUser) : "Bir müzisyen";
+            eylemKaydet(`❌ ${benimIsmim}, ${req.gonderenIsim} tarafından gelen takas teklifini reddetti.`);
+            alert("Takas teklifi reddedildi.");
+        });
     });
 }
 
@@ -469,34 +482,60 @@ function ProgramiCiz(veri) {
 }
 
 function PerformansPanosunuCiz() {
-    const pano = document.getElementById("performans-panosu-alani");
-    if (!pano) return;
-    
-    let skorlar = {};
-    Object.keys(mevcutSlotlar || {}).forEach(g => {
-        if(mevcutSlotlar[g] && g !== "tarih_basligi") {
-            Object.keys(mevcutSlotlar[g]).forEach(s => {
-                let isim = mevcutSlotlar[g][s];
-                if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
+    const slotKutusu = document.getElementById("haftalik-slot-sayilari");
+    const skorKutusu = document.getElementById("skor-tablosu");
+    if (!slotKutusu || !skorKutusu || !mevcutSlotlar) return;
+
+    let istatistik = {};
+    const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+
+    gunler.forEach(gun => {
+        if (mevcutSlotlar[gun]) {
+            Object.keys(mevcutSlotlar[gun]).forEach(saat => {
+                const isim = mevcutSlotlar[gun][saat];
+                if (isim && isim !== "BOŞ" && isim !== "") {
+                    if (!istatistik[isim]) istatistik[isim] = 0;
+                    istatistik[isim]++;
+                }
             });
         }
     });
-    const s = Object.entries(skorlar).sort((a, b) => b[1] - a[1]);
-    
-    pano.innerHTML = `
-        <div class="border-t border-slate-800 pt-6 mt-6">
-            <h3 class="text-white font-black mb-4 flex items-center gap-2 text-xs tracking-wider">
-                <i class="fa-solid fa-trophy text-amber-500"></i> HAFTALIK PERFORMANS TABLOSU
-            </h3>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                ${s.map(([n, h]) => `
-                    <div class="flex justify-between items-center bg-[#0b1329] p-3 rounded-xl border border-slate-800">
-                        <span class="font-bold text-slate-300 text-xs">${n}</span>
-                        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-lg text-[10px] font-black">${h} SAAT</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>`;
+
+    let siraliListe = Object.keys(istatistik).map(isim => {
+        return { isim: isim, slotAdet: istatistik[isim], toplamSaat: istatistik[isim] * 3 };
+    }).sort((a, b) => b.slotAdet - a.slotAdet);
+
+    slotKutusu.innerHTML = "";
+    skorKutusu.innerHTML = "";
+
+    if (siraliListe.length === 0) {
+        const bosUyarisi = `<div class="text-slate-600 text-xs italic text-center pt-8">Takvimde henüz dolu slot yok.</div>`;
+        slotKutusu.innerHTML = bosUyarisi;
+        skorKutusu.innerHTML = bosUyarisi;
+        return;
+    }
+
+    siraliListe.forEach((müzisyen, index) => {
+        slotKutusu.innerHTML += `
+            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
+                <span class="font-bold text-slate-300">${müzisyen.isim}</span>
+                <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.slotAdet} Slot</span>
+            </div>`;
+
+        let dereceSimge = `<span class="w-5 text-center font-bold text-slate-500 text-[11px]">${index + 1}.</span>`;
+        if (index === 0) dereceSimge = `🏆`;
+        if (index === 1) dereceSimge = `🥈`;
+        if (index === 2) dereceSimge = `🥉`;
+
+        skorKutusu.innerHTML += `
+            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
+                <div class="flex items-center gap-2">
+                    ${dereceSimge}
+                    <span class="font-bold text-slate-200">${müzisyen.isim}</span>
+                </div>
+                <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.toplamSaat} Saat</span>
+            </div>`;
+    });
 }
 
 function CanliMuzisyenleriDinle() {
@@ -624,7 +663,6 @@ function notEkle() {
     mesajEl.value = "";
 }
 
-// 1. SOHBET ODASI MOTORU: Mesajları Canlı Dinleme
 function SohbetOdasiDinle() {
     db.ref("meydan_chat").limitToLast(30).on("value", snapshot => {
         const sohbetKutusu = document.getElementById("sohbet-mesajlari");
@@ -679,63 +717,6 @@ document.getElementById("sohbet-girdi")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") MeydanaMesajGonder();
 });
 
-function PerformansPanosunuCiz() {
-    const slotKutusu = document.getElementById("haftalik-slot-sayilari");
-    const skorKutusu = document.getElementById("skor-tablosu");
-    if (!slotKutusu || !skorKutusu || !mevcutSlotlar) return;
-
-    let istatistik = {};
-    const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-
-    gunler.forEach(gun => {
-        if (mevcutSlotlar[gun]) {
-            Object.keys(mevcutSlotlar[gun]).forEach(saat => {
-                const isim = mevcutSlotlar[gun][saat];
-                if (isim && isim !== "BOŞ" && isim !== "") {
-                    if (!istatistik[isim]) istatistik[isim] = 0;
-                    istatistik[isim]++;
-                }
-            });
-        }
-    });
-
-    let siraliListe = Object.keys(istatistik).map(isim => {
-        return { isim: isim, slotAdet: istatistik[isim], toplamSaat: istatistik[isim] * 3 };
-    }).sort((a, b) => b.slotAdet - a.slotAdet);
-
-    slotKutusu.innerHTML = "";
-    skorKutusu.innerHTML = "";
-
-    if (siraliListe.length === 0) {
-        const bosUyarisi = `<div class="text-slate-600 text-xs italic text-center pt-8">Takvimde henüz dolu slot yok.</div>`;
-        slotKutusu.innerHTML = bosUyarisi;
-        skorKutusu.innerHTML = bosUyarisi;
-        return;
-    }
-
-    siraliListe.forEach((müzisyen, index) => {
-        slotKutusu.innerHTML += `
-            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
-                <span class="font-bold text-slate-300">${müzisyen.isim}</span>
-                <span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.slotAdet} Slot</span>
-            </div>`;
-
-        let dereceSimge = `<span class="w-5 text-center font-bold text-slate-500 text-[11px]">${index + 1}.</span>`;
-        if (index === 0) dereceSimge = `🏆`;
-        if (index === 1) dereceSimge = `🥈`;
-        if (index === 2) dereceSimge = `🥉`;
-
-        skorKutusu.innerHTML += `
-            <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
-                <div class="flex items-center gap-2">
-                    ${dereceSimge}
-                    <span class="font-bold text-slate-200">${müzisyen.isim}</span>
-                </div>
-                <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.toplamSaat} Saat</span>
-            </div>`;
-    });
-}
-
 async function HavaDurumuGetir() {
     try {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
@@ -748,6 +729,7 @@ async function HavaDurumuGetir() {
         }
     } catch (e) {}
 }
+
 function googleGirisYap() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function cikisYap() { auth.signOut(); }
 
@@ -774,21 +756,6 @@ firebase.auth().onAuthStateChanged((user) => {
         window.currentUser = null;
     }
 });
-
-function eylemKaydet(mesaj) {
-    db.ref("meydan_eylemleri").push({
-        metin: mesaj,
-        tarih: Date.now()
-    });
-}
-
-// Örnek takas reddetme fonksiyonu içi:
-function takasReddet(takasId, teklifEden, talepEdilen) {
-    db.ref("takas_talepleri/" + takasId).remove().then(() => {
-        // Reddedilme bilgisini eylem günlüğüne gönderiyoruz
-        eylemKaydet(`${window.currentUser ? getAktifIsim(window.currentUser) : 'Bir müzisyen'}, ${teklifEden} tarafından gelen takas teklifini reddetti.`);
-    });
-}
 
 function AktifMuzisyenleriDinle() {
     db.ref("sistemde_aktif_olanlar").on("value", (snapshot) => {
@@ -847,9 +814,9 @@ function MeydanEylemleriniDinle() {
             const saat = new Date(eylem.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
             
             logKutusu.innerHTML += `
-                <div class="p-2 bg-slate-900/40 border border-slate-800/60 rounded-xl flex gap-2 items-start">
+                <div class="p-2 bg-slate-900/40 border border-slate-800/60 rounded-xl flex gap-2 items-start mb-2">
                     <span class="text-slate-500 font-mono text-[10px] pt-0.5">${saat}</span>
-                    <span class="text-slate-300">${eylem.metin}</span>
+                    <span class="text-slate-300 text-xs">${eylem.metin}</span>
                 </div>
             `;
         });
