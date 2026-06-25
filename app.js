@@ -99,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
+    CanliMuzisyenleriDinle(); // GÜNCELLEME: Kayıtlı müzisyenleri dinleyen motor eklendi
     setTimeout(HavaDurumuGetir, 500);
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
@@ -149,7 +150,7 @@ function VeritabaniniKontrolEtVeDinle() {
         }
         mevcutSlotlar = veriler;
         ProgramiCiz(mevcutSlotlar);
-        PerformansPanosunuCiz(); // GÜNCELLEME: Veri değiştikçe tabloyu anlık tetikliyoruz
+        PerformansPanosunuCiz(); 
         CanliSahneVeGeriSayimMotoru();
     });
 }
@@ -328,8 +329,11 @@ function takasReddet(talepKey) {
 }
 
 function ProgramiCiz(veri) {
+    // GÜNCELLEME: Tarih başlığının tamamen kaybolmaması için dinamik kontrol eklendi
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
-    if (baslikEl) baslikEl.innerText = "MEYDAN SLOT TAKVİMİ";
+    if (baslikEl) {
+        baslikEl.innerText = (veri && veri.tarih_basligi) ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
+    }
 
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
@@ -400,7 +404,7 @@ function PerformansPanosunuCiz() {
     
     let skorlar = {};
     Object.keys(mevcutSlotlar || {}).forEach(g => {
-        if(mevcutSlotlar[g]) {
+        if(mevcutSlotlar[g] && g !== "tarih_basligi") { // Başlığı saate ekleme diye koruma
             Object.keys(mevcutSlotlar[g]).forEach(s => {
                 let isim = mevcutSlotlar[g][s];
                 if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
@@ -423,6 +427,34 @@ function PerformansPanosunuCiz() {
                 `).join('')}
             </div>
         </div>`;
+}
+
+// GÜNCELLEME: Kayıtlı Müzisyenleri dinleyip arayüze basan eksik motor eklendi
+function CanliMuzisyenleriDinle() {
+    db.ref("muzisyenler").on("value", snapshot => {
+        const listeAlani = document.getElementById("kayitli-muzisyenler-listesi");
+        if (!listeAlani) return;
+        listeAlani.innerHTML = "";
+        
+        const muzisyenler = snapshot.val();
+        if (!muzisyenler) {
+            listeAlani.innerHTML = `<p class="text-slate-500 italic text-xs p-2">Kayıtlı müzisyen yok.</p>`;
+            return;
+        }
+
+        Object.keys(muzisyenler).forEach(key => {
+            const m = muzisyenler[key];
+            const pResim = m.picture ? m.picture : "https://via.placeholder.com/150";
+            listeAlani.innerHTML += `
+                <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60 shadow-sm">
+                    <img src="${pResim}" class="w-7 h-7 rounded-full border border-slate-700" referrerpolicy="no-referrer">
+                    <div class="truncate">
+                        <span class="text-xs font-bold text-slate-200 block truncate">${m.name || 'Müzisyen'}</span>
+                    </div>
+                </div>
+            `;
+        });
+    });
 }
 
 function CanliSahneVeGeriSayimMotoru() {
