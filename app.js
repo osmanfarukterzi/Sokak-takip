@@ -56,6 +56,7 @@ function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
 }
 
 const varsayilanProgram = {
+    "tarih_basligi": "MEYDAN SLOT TAKVİMİ",
     "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
     "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
@@ -99,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
-    CanliMuzisyenleriDinle(); // GÜNCELLEME: Kayıtlı müzisyenleri dinleyen motor eklendi
+    CanliMuzisyenleriDinle();
     setTimeout(HavaDurumuGetir, 500);
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
@@ -185,7 +186,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
-        if(mevcutSlotlar[gun]) {
+        if(mevcutSlotlar[gun] && gun !== "tarih_basligi") {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] || "";
                 if(slotIsmi !== "" && slotIsmi !== "BOŞ") {
@@ -329,7 +330,7 @@ function takasReddet(talepKey) {
 }
 
 function ProgramiCiz(veri) {
-    // GÜNCELLEME: Tarih başlığının tamamen kaybolmaması için dinamik kontrol eklendi
+    // DÜZELTME: Veritabanındaki gerçek tarih_basligi metnini ezip yok etmemesi için düzeltildi
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     if (baslikEl) {
         baslikEl.innerText = (veri && veri.tarih_basligi) ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
@@ -354,12 +355,18 @@ function ProgramiCiz(veri) {
             
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
+            const isHaftaSonuIlk = ["Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
             
-            let kartStili = "bg-[#050b18] border border-slate-800/80";
+            // RENK GÜNCELLEMELERİ
+            let kartStili = "bg-slate-900 border border-slate-800"; // Standart Dolu Kart
             let etiketHtml = "";
 
             if (isHaftaIciSabit) {
-                etiketHtml = `<span class="text-[9px] font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i> SABİT</span>`;
+                kartStili = "bg-amber-600/10 border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.05)]"; // Hafta içi sabit turuncu
+                etiketHtml = `<span class="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i> SABİT</span>`;
+            } else if (isHaftaSonuIlk) {
+                kartStili = "bg-purple-500/10 border border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.05)]"; // Hafta sonu mor
+                etiketHtml = `<span class="text-[9px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 flex items-center gap-1"><i class="fa-solid fa-star text-[8px]"></i> HAFTA SONU</span>`;
             } else {
                 etiketHtml = `<span class="text-[9px] font-bold text-slate-500 bg-slate-500/5 px-2 py-0.5 rounded border border-slate-800 flex items-center gap-1">DÖNGÜ</span>`;
             }
@@ -370,7 +377,7 @@ function ProgramiCiz(veri) {
                     ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-1 px-2.5 rounded-lg transition cursor-pointer shadow-sm">Sahne Al</button>`
                     : `<span class="text-[9px] text-amber-500/40 italic">Boş Slot</span>`;
             } else if (isOwner) {
-                kartStili = "bg-emerald-500/10 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]";
+                kartStili = "bg-emerald-500/10 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.07)]"; // Senin slotların zümrüt yeşili
                 etiketHtml = `<button onclick="window.slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-rose-500/20 transition cursor-pointer font-bold">İptal Et</button>`;
             } else if (currentUser) {
                 etiketHtml = `<button onclick="window.takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[9px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-cyan-500/20 transition cursor-pointer font-bold">Takas</button>`;
@@ -404,7 +411,7 @@ function PerformansPanosunuCiz() {
     
     let skorlar = {};
     Object.keys(mevcutSlotlar || {}).forEach(g => {
-        if(mevcutSlotlar[g] && g !== "tarih_basligi") { // Başlığı saate ekleme diye koruma
+        if(mevcutSlotlar[g] && g !== "tarih_basligi") {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
                 let isim = mevcutSlotlar[g][s];
                 if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
@@ -429,7 +436,6 @@ function PerformansPanosunuCiz() {
         </div>`;
 }
 
-// GÜNCELLEME: Kayıtlı Müzisyenleri dinleyip arayüze basan eksik motor eklendi
 function CanliMuzisyenleriDinle() {
     db.ref("muzisyenler").on("value", snapshot => {
         const listeAlani = document.getElementById("kayitli-muzisyenler-listesi");
