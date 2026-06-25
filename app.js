@@ -17,11 +17,11 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
-// İsimlerdeki tüm boşlukları, görünmez karakterleri ve Türkçe harfleri sıfırlayan güvenli temizleyici
+// Karakter ve boşluk krizlerini sıfırlayan temizleyici
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
-        .replace(/\s+/g, '') // Tüm iç ve dış boşlukları tamamen kazı
+        .replace(/\s+/g, '')
         .replace(/ı/g, 'i')
         .replace(/ş/g, 's')
         .replace(/ğ/g, 'g')
@@ -37,6 +37,21 @@ function getAktifIsim(user) {
     return user.displayName ? user.displayName.split(' ')[0] : "";
 }
 
+// Sadece senin slotlarını ayırt eden güvenli kontrol
+function osmanKontrol(slotIsmi, benimIsim) {
+    let temizSlot = isimTemizle(slotIsmi);
+    let temizBenim = isimTemizle(benimIsim);
+    
+    // Eğer slotta tam olarak "farnefes" yazıyorsa bu kesinlikle senin değildir, pas geç
+    if (temizSlot.includes("farnefes")) return false;
+    
+    if (temizBenim.includes("sirayet") || temizBenim.includes("faruk") || temizBenim.includes("osman")) {
+        return temizSlot.includes("sirayet") || temizSlot.includes("faruk") || temizSlot.includes("osman");
+    }
+    
+    return temizSlot.includes(temizBenim) || temizBenim.includes(temizSlot);
+}
+
 let mevcutSlotlar = {}; 
 
 const varsayilanProgram = {
@@ -46,7 +61,7 @@ const varsayilanProgram = {
     "Perşembe":  { "12:00-15:00": "Mami", "15:00-18:00": "İsmet", "18:00-21:00": "Raşit", "21:00-24:00": "Sirayet" },
     "Cuma":      { "12:00-15:00": "Doğa", "15:00-18:00": "Nebi", "18:00-21:00": "Raşit", "21:00-24:00": "İsmet" },
     "Cumartesi": { "12:00-15:00": "Mami", "15:00-18:00": "Berkan", "18:00-21:00": "Uğur", "21:00-24:00": "Sirayet" },
-    "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Faruk", "18:00-21:00": "Samet", "21:00-24:00": "Enes" }
+    "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Farnefes", "18:00-21:00": "Samet", "21:00-24:00": "Enes" } // DÜZELTME: Faruk -> Farnefes yapıldı
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -133,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
+        // Eğer veritabanı boşsa ya da eski yapı varsa yeni Farnefes'li listeyi yükle
         if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
@@ -227,7 +243,7 @@ function ProgramiCiz(veri) {
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
 
-    let benimIsmimTemiz = currentUser ? isimTemizle(getAktifIsim(currentUser)) : "";
+    let benimIsmim = currentUser ? getAktifIsim(currentUser) : "";
 
     gunler.forEach(gun => {
         let slotlarHtml = "";
@@ -236,10 +252,8 @@ function ProgramiCiz(veri) {
         saatler.forEach(saat => {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
-            const temizSlotIsmi = isimTemizle(isim);
             
-            // Ultra esnek akıllı sahiplik algılayıcı (Hataları %100 önler)
-            const isOwner = currentUser && !isBoş && (temizSlotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(temizSlotIsmi));
+            const isOwner = currentUser && !isBoş && osmanKontrol(isim, benimIsmim);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-[#050b18] border border-slate-800/80";
@@ -350,17 +364,14 @@ function sahneAl(gun, saat) {
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     let benimIsmim = getAktifIsim(currentUser);
-    let benimIsmimTemiz = isimTemizle(benimIsmim); 
     let benimSlotlarim = [];
 
-    // Veritabanındaki tüm günleri tara ve esnek temizlik metodu ile benim ismimi ara
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
-                let slotIsmi = mevcutSlotlar[gun][saat] ? isimTemizle(mevcutSlotlar[gun][saat]) : "";
-                if(slotIsmi !== "" && slotIsmi !== "bos") {
-                    // Eşleşmeyi tam kontrol et: İki isim birbirini içeriyor mu?
-                    if (slotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(slotIsmi)) {
+                let slotIsmi = mevcutSlotlar[gun][saat] || "";
+                if(slotIsmi !== "" && slotIsmi !== "BOŞ") {
+                    if (osmanKontrol(slotIsmi, benimIsmim)) {
                         benimSlotlarim.push({ gun: gun, saat: saat });
                     }
                 }
@@ -369,7 +380,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Lütfen takvimdeki isminizin (${benimIsmim}) tam uyuştuğundan emin olun.`); 
+        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Lütfen takvimde kendi slotunuz olduğundan emin olun.`); 
         return; 
     }
     
@@ -420,15 +431,14 @@ function CanliTakaslariDinle() {
         if(!t) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4">Aktif takas teklifi yok.</p>`; return; }
         
         let talepVarmi = false;
-        let benimIsmimTemiz = currentUser ? isimTemizle(getAktifIsim(currentUser)) : "";
+        let benimIsim = currentUser ? getAktifIsim(currentUser) : "";
 
         Object.keys(t).forEach(key => {
             const req = t[key];
             if(req.durum !== "beklemede") return;
             talepVarmi = true;
 
-            const targetNameTemiz = isimTemizle(req.aliciIsim);
-            const isImTarget = (targetNameTemiz.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(targetNameTemiz));
+            const isImTarget = osmanKontrol(req.aliciIsim, benimIsim);
 
             if(isImTarget) {
                 alani.innerHTML += `
