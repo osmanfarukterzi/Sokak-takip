@@ -373,7 +373,7 @@ function ProgramiCiz(veri) {
             const isBoş = isim === "BOŞ" || isim === "";
             
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
-            const isHaftaIciSabit = ["Pazartesi", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
+            const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             const isHaftaSonuIlk = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-slate-900 border border-slate-800"; 
@@ -514,7 +514,7 @@ function CanliSahneVeGeriSayimMotoru() {
             sahneYazi.className = "text-xl font-black text-emerald-400 tracking-wide";
             if(canliIsik) canliIsik.className = "w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping";
         } else {
-            sahneYazi.innerText = kiminSahnep.toUpperCase();
+            sahneYazi.innerText = kiminSahnep;
             sahneYazi.className = "text-xl font-black text-white tracking-wide";
             if(canliIsik) canliIsik.className = "w-2.5 h-2.5 bg-red-500 rounded-full animate-ping";
         }
