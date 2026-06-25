@@ -39,19 +39,15 @@ function getAktifIsim(user) {
     return user.displayName ? user.displayName.split(' ')[0] : "Müzisyen";
 }
 
-// KESİN ÇÖZÜM: Farnefes ve Faruk kelimelerini tamamen birbirinden ayırdık
 function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
     let temizSlot = isimTemizle(slotIsmi);
     let temizKullanici = isimTemizle(kullanıcıIsmi);
     
-    // Eğer slot adında farnefes geçiyorsa kesinlikle senin DEĞİLDİR.
     if (temizSlot.includes("farnefes")) {
         return false; 
     }
     
-    // Sen giriş yaptığında sana ait sayılacak kelimeler
     if (temizKullanici === "sirayet" || temizKullanici === "osman" || temizKullanici === "faruk") {
-        // Eğer slot "faruk" ise ve "farnefes" içermiyorsa senindir (Örn: Sadece Faruk yazıyorsa)
         if (temizSlot === "faruk") return true;
         return temizSlot.includes("sirayet") || temizSlot.includes("osman");
     }
@@ -153,6 +149,7 @@ function VeritabaniniKontrolEtVeDinle() {
         }
         mevcutSlotlar = veriler;
         ProgramiCiz(mevcutSlotlar);
+        PerformansPanosunuCiz(); // GÜNCELLEME: Veri değiştikçe tabloyu anlık tetikliyoruz
         CanliSahneVeGeriSayimMotoru();
     });
 }
@@ -395,7 +392,6 @@ function ProgramiCiz(veri) {
                 <div class="space-y-3">${slotlarHtml}</div>
             </div>`;
     });
-    PerformansPanosunuCiz();
 }
 
 function PerformansPanosunuCiz() {
