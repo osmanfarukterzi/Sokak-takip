@@ -22,7 +22,7 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
-// Harf ve boşluk duyarlılığını sıfırlayan güvenli isim temizleyici
+// İsimlerdeki Türkçe karakter ve boşluk sorunlarını çözen güvenli fonksiyon
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
@@ -44,6 +44,7 @@ function getAktifIsim(user) {
 
 let mevcutSlotlar = {}; 
 
+// Firebase'in kabul ettiği hatasız saat formatı (iki nokta üst üste)
 const varsayilanProgram = {
     "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
@@ -71,24 +72,13 @@ window.notEkle = function() {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Eksiksiz sistem başlatıldı...");
-    
-    // Eksik alan dinamik kontrolü
-    const anaKapsayici = document.getElementById("program-akisi")?.parentElement;
-    if(anaKapsayici && !document.getElementById("performans-panosu-alani")) {
-        const yeniDiv = document.createElement("div");
-        yeniDiv.id = "performans-panosu-alani";
-        anaKapsayici.appendChild(yeniDiv);
-    }
-
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
-    setTimeout(HavaDurumuGetir, 500);
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
-    // Form gönderimini bağla (Panoya bildir butonu için)
-    const panoForm = document.querySelector("button[onclick='notEkle()']") || document.getElementById("panoya-bildir-btn");
+    // Panoya bildir butonu bağlama
+    const panoForm = document.getElementById("panoya-bildir-btn") || document.querySelector("button[onclick='notEkle()']");
     if(panoForm) {
         panoForm.removeAttribute("onclick");
         panoForm.addEventListener("click", window.notEkle);
@@ -112,11 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }
-            db.ref("muzisyenler/" + user.uid).update({
-                name: sistemdekiIsim,
-                picture: user.photoURL,
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
-            });
         } else {
             currentUser = null;
             if(notYazanInput) notYazanInput.value = "";
@@ -136,13 +121,13 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
+        // Eğer veritabanı boşsa veya eski noktalı veriler kalmışsa otomatik olarak yeni formatı yazar
         if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
         }
         mevcutSlotlar = veriler;
         ProgramiCiz(veriler);
-        CanliSahneVeGeriSayimMotoru();
     });
 }
 
@@ -208,7 +193,7 @@ function ProgramiCiz(veri) {
             </div>`;
     });
 
-    // Event bağlamaları
+    // Buton tıklama olaylarını güvenli bağlama
     document.querySelectorAll(".action-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const action = btn.getAttribute("data-action");
@@ -235,7 +220,7 @@ window.slotBiral = function(gun, saat) {
             isim: "📢 BİLDİRİM",
             mesaj: `${isim}, ${gun} ${saat} slotunu boşa çıkardı.`
         });
-    }).catch(e => console.error("Silme hatası:", e));
+    });
 };
 
 window.sahneAl = function(gun, saat) {
@@ -267,7 +252,7 @@ window.takasPenceresiAc = function(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Sistemde '${benimIsmim}' adına kayıtlı aktif bir slot bulunamadı! Takas yapabilmek için önce bir slotun olmalı.`); 
+        alert(`Sistemde '${benimIsmim}' adına kayıtlı aktif bir slot bulunamadı!`); 
         return; 
     }
     
@@ -293,8 +278,6 @@ window.takasPenceresiAc = function(karsiGun, karsiSaat, karsiMuzisyen) {
         alert("Takas talebiniz karşı tarafa iletildi!");
     });
 };
-
-// --- Geri Getirilen ve Tamamen Doldurulan Eksiksiz Canlı Motorlar ---
 
 function CanliSahneVeGeriSayimMotoru() {
     const sahneYazi = document.getElementById("su-an-sahnede-kim-var");
@@ -336,7 +319,6 @@ function CanliTakaslariDinle() {
         if (!alani) return;
         
         const t = snapshot.val();
-        // Varsayılan boş durumu temizle
         alani.innerHTML = `<div class="text-xs text-slate-500 italic">Aktif takas teklifi yok.</div>`;
         if(!t) return;
 
@@ -349,7 +331,7 @@ function CanliTakaslariDinle() {
             if(isimTemizle(req.aliciIsim) === benimSahneIsmimTemiz) {
                 icerikHtml += `
                     <div class="bg-slate-900 border border-cyan-500/30 p-3 rounded-xl text-xs mt-2">
-                        <p class="text-white"><span class="text-cyan-400 font-bold">${req.gonderenIsim}</span> (${req.gonderenGun} ${req.gonderenSaat}) slotunu seninle (${req.aliciGun} ${req.aliciSaat}) takas etmek istiyor.</p>
+                        <p class="text-white"><span class="text-cyan-400 font-bold">${req.gonderenIsim}</span> sizinle slot takas etmek istiyor.</p>
                         <div class="flex gap-2 mt-2">
                             <button onclick="window.takasOnayla('${key}')" class="bg-emerald-500 px-2 py-1 rounded text-black font-bold cursor-pointer">Kabul</button>
                             <button onclick="window.takasReddet('${key}')" class="bg-rose-500 px-2 py-1 rounded text-white cursor-pointer">Reddet</button>
@@ -368,12 +350,10 @@ window.takasOnayla = function(talepKey) {
         guncelleme[`haftalik_slotlar/${req.gonderenGun}/${req.gonderenSaat}`] = req.aliciIsim;
         guncelleme[`haftalik_slotlar/${req.aliciGun}/${req.aliciSaat}`] = req.gonderenIsim;
         guncelleme[`takas_talepleri/${talepKey}/durum`] = "onaylandi";
-        db.ref().update(guncelleme).then(() => alert("Takas başarıyla gerçekleşti!"));
+        db.ref().update(guncelleme);
     });
 };
-window.takasReddet = function(talepKey) { 
-    db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi").then(() => alert("Takas reddedildi.")); 
-};
+window.takasReddet = function(talepKey) { db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi"); };
 
 function CanliVerileriDinle() {
     db.ref("notlar").on("value", snapshot => {
@@ -381,14 +361,11 @@ function CanliVerileriDinle() {
         if (!pano) return; 
         pano.innerHTML = "";
         const veriler = snapshot.val();
-        if (!veriler) {
-            pano.innerHTML = `<div class="text-xs text-slate-500 italic p-2">Pano boş...</div>`;
-            return;
-        }
+        if (!veriler) return;
         Object.keys(veriler).reverse().forEach(key => {
             const item = veriler[key];
             pano.innerHTML += `
-                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 mb-2 animate-fade-in">
+                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 mb-2">
                     <span class="font-bold text-orange-400 block mb-0.5">${item.isim}:</span>
                     <p class="text-slate-300 pr-4">${item.mesaj}</p>
                 </div>`;
@@ -416,11 +393,4 @@ function PerformansPanosunuCiz() {
     });
     siralamaHtml += `</div></div>`;
     panoAlani.innerHTML = Object.keys(skorlar).length > 0 ? siralamaHtml : "";
-}
-
-async function HavaDurumuGetir() {
-    const havaYazi = document.querySelector("#weather-text") || document.querySelector(".text-slate-300.text-xs"); 
-    if(havaYazi && havaYazi.innerText.includes("Yükleniyor")) {
-        havaYazi.innerText = "Beşiktaş: 22°C / Açık";
-    }
 }
