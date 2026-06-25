@@ -17,20 +17,36 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
+// Büyük-küçük harf veya boşluktan kaynaklı buton/takas kilitlenmelerini çözen yardımcı fonksiyon
+function isimTemizle(isim) {
+    if(!isim) return "";
+    return isim.toString().trim().toLowerCase()
+        .replace(/ı/g, 'i')
+        .replace(/ş/g, 's')
+        .replace(/ğ/g, 'g')
+        .replace(/ç/g, 'c')
+        .replace(/ü/g, 'u')
+        .replace(/ö/g, 'o');
+}
+
 function getAktifIsim(user) {
     if (!user) return "";
-    return mailToName[user.email] || user.displayName.split(' ')[0];
+    if (user.email && mailToName[user.email]) return mailToName[user.email];
+    if (user.displayName && user.displayName.toLowerCase().includes("osman faruk")) return "Sirayet";
+    return user.displayName ? user.displayName.split(' ')[0] : "";
 }
+
 let mevcutSlotlar = {}; 
 
+// ÇÖKMEYİ ENGELLEYEN YENİ FORMAT: Saatlerdeki noktalar (.) iki nokta (:) yapıldı.
 const varsayilanProgram = {
-    "Pazartesi": { "12.00-15.00": "Nebi", "15.00-18.00": "Sirayet", "18.00-21.00": "Berkan", "21.00-24.00": "Uğur" },
-    "Salı":      { "12.00-15.00": "Doğa", "15.00-18.00": "Raşit", "18.00-21.00": "Samet", "21.00-24.00": "İsmet" },
-    "Çarşamba":  { "12.00-15.00": "Uğur", "15.00-18.00": "Berkan", "18.00-21.00": "Nebi", "21.00-24.00": "Samet" },
-    "Perşembe":  { "12.00-15.00": "Mami", "15.00-18.00": "İsmet", "18.00-21.00": "Raşit", "21.00-24.00": "Sirayet" },
-    "Cuma":      { "12.00-15.00": "Doğa", "15.00-18.00": "Nebi", "18.00-21.00": "Raşit", "21.00-24.00": "İsmet" },
-    "Cumartesi": { "12.00-15.00": "Mami", "15.00-18.00": "Berkan", "18.00-21.00": "Uğur", "21.00-24.00": "Sirayet" },
-    "Pazar":     { "12.00-15.00": "Yiğit", "15.00-18.00": "Faruk", "18.00-21.00": "Samet", "21.00-24.00": "Enes" }
+    "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkan", "21:00-24:00": "Uğur" },
+    "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
+    "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
+    "Perşembe":  { "12:00-15:00": "Mami", "15:00-18:00": "İsmet", "18:00-21:00": "Raşit", "21:00-24:00": "Sirayet" },
+    "Cuma":      { "12:00-15:00": "Doğa", "15:00-18:00": "Nebi", "18:00-21:00": "Raşit", "21:00-24:00": "İsmet" },
+    "Cumartesi": { "12:00-15:00": "Mami", "15:00-18:00": "Berkan", "18:00-21:00": "Uğur", "21:00-24:00": "Sirayet" },
+    "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Faruk", "18:00-21:00": "Samet", "21:00-24:00": "Enes" }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,24 +63,35 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(HavaDurumuGetir, 500);
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
+    // HTML'deki buton kurgusuna inline onclick ezmemesi için global fonksiyonları window'a bağlıyoruz
+    window.googleGirisYap = googleGirisYap;
+    window.cikisYap = cikisYap;
+    window.sahneAl = sahneAl;
+    window.slotBiral = slotBiral;
+    window.takasPenceresiAc = takasPenceresiAc;
+    window.takasOnayla = takasOnayla;
+    window.takasReddet = takasReddet;
+    window.notEkle = notEkle;
+
     auth.onAuthStateChanged(user => {
         const authArea = document.getElementById("auth-status-area");
         const notYazanInput = document.getElementById("not-yazan");
         
         if (user) {
             currentUser = user;
-            if(notYazanInput) notYazanInput.value = user.displayName;
+            let aktifIsim = getAktifIsim(user);
+            if(notYazanInput) notYazanInput.value = aktifIsim;
             if(authArea) {
                 authArea.innerHTML = `
                     <div class="flex items-center gap-2 bg-[#050b18] py-1.5 px-3 rounded-xl border border-emerald-500/30">
                         <img src="${user.photoURL}" class="w-6 h-6 rounded-full border border-emerald-500" referrerpolicy="no-referrer">
-                        <span class="text-xs font-bold text-emerald-400">${user.displayName.split(' ')[0]}</span>
-                        <button onclick="cikisYap()" class="text-[10px] text-rose-400 ml-2 hover:underline cursor-pointer">Çıkış</button>
+                        <span class="text-xs font-bold text-emerald-400">${aktifIsim}</span>
+                        <button onclick="window.cikisYap()" class="text-[10px] text-rose-400 ml-2 hover:underline cursor-pointer">Çıkış</button>
                     </div>
                 `;
             }
             db.ref("muzisyenler/" + user.uid).update({
-                name: user.displayName.includes("Osman Faruk") ? "Sirayet" : user.displayName.split(' ')[0],
+                name: aktifIsim,
                 picture: user.photoURL,
                 lastSeen: firebase.database.ServerValue.TIMESTAMP
             });
@@ -73,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if(notYazanInput) notYazanInput.value = "";
             if(authArea) {
                 authArea.innerHTML = `
-                    <button onclick="googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-2 transition shadow-lg cursor-pointer">
+                    <button onclick="window.googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-2 transition shadow-lg cursor-pointer">
                         <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
                         Google ile Giriş Yap
                     </button>
@@ -87,7 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
-        if (!veriler || Object.keys(veriler).length === 0) {
+        // Eğer veritabanı boşsa VEYA içinde hala o eski noktalı (.00) veri kalmışsa temizleyip doğrusunu yazar
+        if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
         }
@@ -118,10 +146,10 @@ function CanliSahneVeGeriSayimMotoru() {
     let aktifSlot = null;
     let bitisSaati = 0;
 
-    if (saat >= 12 && saat < 15) { aktifSlot = "12.00-15.00"; bitisSaati = 15; }
-    else if (saat >= 15 && saat < 18) { aktifSlot = "15.00-18.00"; bitisSaati = 18; }
-    else if (saat >= 18 && saat < 21) { aktifSlot = "18.00-21.00"; bitisSaati = 21; }
-    else if (saat >= 21 && saat < 24) { aktifSlot = "21.00-24.00"; bitisSaati = 24; }
+    if (saat >= 12 && saat < 15) { aktifSlot = "12:00-15:00"; bitisSaati = 15; }
+    else if (saat >= 15 && saat < 18) { aktifSlot = "15:00-18:00"; bitisSaati = 18; }
+    else if (saat >= 18 && saat < 21) { aktifSlot = "18:00-21:00"; bitisSaati = 21; }
+    else if (saat >= 21 && saat < 24) { aktifSlot = "21:00-24:00"; bitisSaati = 24; }
 
     if (aktifSlot && mevcutSlotlar[bugunTr] && mevcutSlotlar[bugunTr][aktifSlot]) {
         const kiminSahnep = mevcutSlotlar[bugunTr][aktifSlot];
@@ -146,7 +174,7 @@ function CanliSahneVeGeriSayimMotoru() {
         const s = (kalanSaniye % 60).toString().padStart(2, '0');
 
         sayacYazi.innerText = `${h}:${m}:${s}`;
-        sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
+        if(sayacEtiket) sayacEtiket.innerText = "Slotun Bitmesine Kalan Süre";
     } else {
         sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
         sahneYazi.className = "text-2xl font-black text-slate-400 tracking-wide";
@@ -166,7 +194,7 @@ function CanliSahneVeGeriSayimMotoru() {
         const s = (kalanSaniye % 60).toString().padStart(2, '0');
 
         sayacYazi.innerText = `${h}:${m}:${s}`;
-        sayacEtiket.innerText = "İlk Slotun Başlamasına Kalan";
+        if(sayacEtiket) sayacEtiket.innerText = "İlk Slotun Başlamasına Kalan";
     }
 }
 
@@ -181,24 +209,20 @@ function ProgramiCiz(veri) {
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
 
-    let userGroupKey = currentUser && currentUser.displayName ? currentUser.displayName.toLowerCase() : "";
+    let benimIsmimTemiz = currentUser ? isimTemizle(getAktifIsim(currentUser)) : "";
 
     gunler.forEach(gun => {
         let slotlarHtml = "";
-        const saatler = ["12.00-15.00", "15.00-18.00", "18.00-21.00", "21.00-24.00"];
+        const saatler = ["12:00-15:00", "15:00-18:00", "18:00-21:00", "21:00-24:00"];
 
         saatler.forEach(saat => {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
-            const güvenliIsim = isim.toLowerCase();
+            const temizSlotIsmi = isimTemizle(isim);
             
-            const isOwner = currentUser && (
-                userGroupKey.includes(güvenliIsim) || 
-                (güvenliIsim.includes("sirayet") && userGroupKey.includes("osman faruk")) ||
-                (güvenliIsim.includes("faruk") && userGroupKey.includes("osman faruk"))
-            );
-
-            const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12.00-15.00";
+            // Sirayet / Osman Faruk Terzi eşleşmesini kusursuzlaştıran kontrol
+            const isOwner = currentUser && (temizSlotIsmi === benimIsmimTemiz);
+            const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-[#050b18] border border-slate-800/80";
             let etiketHtml = "";
@@ -212,13 +236,13 @@ function ProgramiCiz(veri) {
             if (isBoş) {
                 kartStili = "bg-amber-500/5 border border-dashed border-amber-500/30 animate-pulse";
                 etiketHtml = currentUser 
-                    ? `<button onclick="sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-0.5 px-2 rounded transition cursor-pointer">Sahne Al</button>`
+                    ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-0.5 px-2 rounded transition cursor-pointer">Sahne Al</button>`
                     : `<span class="text-[9px] text-amber-500/40 italic">Müsait</span>`;
             } else if (isOwner) {
                 kartStili = "bg-emerald-500/10 border border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
-                etiketHtml = `<button onclick="slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-slate-950 px-2 py-0.5 rounded transition cursor-pointer">İptal Et</button>`;
+                etiketHtml = `<button onclick="window.slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-slate-950 px-2 py-0.5 rounded transition cursor-pointer">İptal Et</button>`;
             } else if (currentUser) {
-                etiketHtml = `<button onclick="takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[9px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 px-2 py-0.5 rounded border border-cyan-500/20 transition cursor-pointer">Takas</button>`;
+                etiketHtml = `<button onclick="window.takasPenceresiAc('${gun}', '${saat}', '${isim}')" class="text-[9px] bg-cyan-500/10 hover:bg-cyan-500 text-cyan-400 hover:text-slate-950 px-2 py-0.5 rounded border border-cyan-500/20 transition cursor-pointer">Takas</button>`;
             }
 
             slotlarHtml += `
@@ -251,10 +275,12 @@ function PerformansPanosunuCiz() {
     
     let skorlar = {};
     Object.keys(mevcutSlotlar || {}).forEach(g => {
-        Object.keys(mevcutSlotlar[g]).forEach(s => {
-            let isim = mevcutSlotlar[g][s];
-            if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
-        });
+        if(mevcutSlotlar[g]) {
+            Object.keys(mevcutSlotlar[g]).forEach(s => {
+                let isim = mevcutSlotlar[g][s];
+                if (isim !== "BOŞ" && isim !== "") skorlar[isim] = (skorlar[isim] || 0) + 3;
+            });
+        }
     });
     const s = Object.entries(skorlar).sort((a, b) => b[1] - a[1]);
     
@@ -305,14 +331,14 @@ function sahneAl(gun, saat) {
 
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    let benimIsmim = "sirayet"; 
+    let benimIsmimTemiz = isimTemizle(getAktifIsim(currentUser)); 
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
-                let slotIsmi = mevcutSlotlar[gun][saat] ? mevcutSlotlar[gun][saat].toString().toLowerCase().trim() : "";
-                if(slotIsmi === benimIsmim) {
+                let slotIsmi = mevcutSlotlar[gun][saat] ? isimTemizle(mevcutSlotlar[gun][saat]) : "";
+                if(slotIsmi === benimIsmimTemiz) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
@@ -320,7 +346,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Slot listesinde 'Sirayet' ismini bulamadım. Konsola bak, orada ne görüyorsun?"); 
+        alert(`Sistemde sizin adınıza aktif bir slot bulunamadı!`); 
         return; 
     }
     
@@ -336,7 +362,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
 
     db.ref("takas_talepleri").push().set({
         gonderenUid: currentUser.uid,
-        gonderenIsim: "Sirayet",
+        gonderenIsim: getAktifIsim(currentUser),
         gonderenGun: bSlot.gun,
         gonderenSaat: bSlot.saat,
         aliciIsim: karsiMuzisyen,
@@ -344,7 +370,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         aliciSaat: karsiSaat,
         durum: "beklemede"
     });
-    alert("Takas talebin 'Sirayet' olarak gönderildi!");
+    alert("Takas talebiniz başarıyla gönderildi!");
 }
 
 function CanliTakaslariDinle() {
@@ -357,26 +383,25 @@ function CanliTakaslariDinle() {
         if(!t) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4">Aktif takas teklifi yok.</p>`; return; }
         
         let talepVarmi = false;
-        let userGroupKey = currentUser && currentUser.displayName ? currentUser.displayName.toLowerCase() : "";
-        let benimSahneIsmim = userGroupKey.includes("osman faruk") ? "sirayet" : userGroupKey;
+        let benimIsmimTemiz = currentUser ? isimTemizle(getAktifIsim(currentUser)) : "";
 
         Object.keys(t).forEach(key => {
             const req = t[key];
             if(req.durum !== "beklemede") return;
             talepVarmi = true;
 
-            const targetName = req.aliciIsim.toLowerCase();
-            const isImTarget = benimSahneIsmim.includes(targetName) || targetName.includes(benimSahneIsmim);
+            const targetNameTemiz = isimTemizle(req.aliciIsim);
+            const isImTarget = (targetNameTemiz === benimIsmimTemiz);
 
             if(isImTarget) {
                 alani.innerHTML += `
-                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md animate-pulse">
+                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md">
                         <p class="text-slate-200 leading-relaxed">
                             <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunu, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotuyla değiştirmek istiyor.
                         </p>
                         <div class="flex gap-2 pt-1">
-                            <button onclick="takasOnayla('${key}')" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1 rounded transition text-[10px] cursor-pointer">Kabul Et</button>
-                            <button onclick="takasReddet('${key}')" class="flex-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold py-1 rounded transition text-[10px] cursor-pointer">Reddet</button>
+                            <button onclick="window.takasOnayla('${key}')" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1 rounded transition text-[10px] cursor-pointer">Kabul Et</button>
+                            <button onclick="window.takasReddet('${key}')" class="flex-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold py-1 rounded transition text-[10px] cursor-pointer">Reddet</button>
                         </div>
                     </div>`;
             } else {
@@ -428,7 +453,7 @@ function CanliVerileriDinle() {
         Object.keys(veriler).reverse().forEach(key => {
             const item = veriler[key];
             pano.innerHTML += `
-                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80">
+                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 mb-2">
                     <span class="font-bold text-orange-400 block mb-0.5">${item.isim}:</span>
                     <p class="text-slate-300 pr-4">${item.mesaj}</p>
                 </div>`;
@@ -441,7 +466,7 @@ function CanliVerileriDinle() {
         if(!v) return;
         Object.keys(v).forEach(k => {
             liste.innerHTML += `
-                <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60">
+                <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60 mb-1.5">
                     <img src="${v[k].picture}" class="w-6 h-6 rounded-full border border-slate-700" referrerpolicy="no-referrer">
                     <span class="text-xs font-bold text-slate-300">${v[k].name.toUpperCase()}</span>
                 </div>`;
@@ -452,8 +477,12 @@ function CanliVerileriDinle() {
 function notEkle() {
     if (!currentUser) return;
     const mesajEl = document.getElementById("not-icerik");
-    if (!mesajEl.value.trim()) return;
-    db.ref("notlar").push({ uid: currentUser.uid, isim: currentUser.displayName.toLowerCase().includes("osman faruk") ? "Sirayet" : currentUser.displayName.split(' ')[0], mesaj: mesajEl.value.trim() });
+    if (!mesajEl || !mesajEl.value.trim()) return;
+    db.ref("notlar").push({ 
+        uid: currentUser.uid, 
+        isim: getAktifIsim(currentUser), 
+        mesaj: mesajEl.value.trim() 
+    });
     mesajEl.value = "";
 }
 
@@ -462,7 +491,10 @@ async function HavaDurumuGetir() {
         const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0428&longitude=29.0074&current_weather=true");
         if (res.ok) {
             const data = await res.json();
-            document.getElementById("havadurumu-derece").innerText = `Beşiktaş: ${Math.round(data.current_weather.temperature)}°C`;
+            const havadurumuEl = document.getElementById("havadurumu-derece");
+            if (havadurumuEl) {
+                havadurumuEl.innerText = `Beşiktaş: ${Math.round(data.current_weather.temperature)}°C`;
+            }
         }
     } catch (e) {}
 }
