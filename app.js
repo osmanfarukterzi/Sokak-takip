@@ -186,17 +186,45 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-function sahneAl(gun, saat) {
-    if (!currentUser) { alert("Lütfen önce Google ile giriş yapın."); return; }
-    let isim = getAktifIsim(currentUser);
+window.sahneAl = function(gun, saat) {
+    if (!currentUser) {
+        alert("Slot alabilmek için önce giriş yapmalısın!");
+        return;
+    }
+    
+    const benimIsmim = getAktifIsim(currentUser);
+    const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    let toplamSlotSayim = 0;
 
-    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
-        db.ref("notlar").push({
-            isim: "✅ YENİ SLOT",
-            mesaj: `${isim}, ${gun} ${saat} slotunu tek tıkla rezerve etti.`
+    // 1. ADIM: Mevcut programı tara ve bu müzisyenin kaç slotu var say
+    gunler.forEach(g => {
+        if (mevcutSlotlar && mevcutSlotlar[g]) {
+            Object.keys(mevcutSlotlar[g]).forEach(s => {
+                if (mevcutSlotlar[g][s] === benimIsmim) {
+                    toplamSlotSayim++;
+                }
+            });
+        }
+    });
+
+    // 2. ADIM: Kural Kontrolü (Maksimum 2 Slot)
+    if (toplamSlotSayim >= 2) {
+        alert(`Hop ${benimIsmim}! Meydan kuralları gereği bir kişi haftada en fazla 2 slot alabilir. Sen zaten 2 slotunu doldurmuşsun!`);
+        return; // İşlemi iptal et, veritabanına yazdırma
+    }
+
+    // 3. ADIM: Eğer kuralı ihlal etmiyorsa slotu rezerve et
+    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim)
+        .then(() => {
+            // İsteğe bağlı: Panoya otomatik bildirim düşür
+            const bildirimMetni = `✅ YENİ SLOT: ${benimIsmim}, ${gun} ${saat} slotunu tek tıkla rezerve etti.`;
+            // Eğer bildirim panon Firebase'e bağlıysa buraya push kodu ekleyebilirsin
+            console.log("Slot başarıyla alındı.");
+        })
+        .catch((error) => {
+            console.error("Slot alınırken hata oluştu: ", error);
         });
-    }).catch(err => alert("Hata: " + err.message));
-}
+};
 
 function slotBiral(gun, saat) {
     if (!currentUser) return;
