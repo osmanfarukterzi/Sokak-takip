@@ -306,15 +306,19 @@ function sahneAl(gun, saat) {
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
     
-    let benimIsmim = "Sirayet"; 
+    console.log("Mevcut Slotlar:", mevcutSlotlar);
+    
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
-                let slotIsmi = mevcutSlotlar[gun][saat] ? mevcutSlotlar[gun][saat].toString().toLowerCase().trim() : "";
+                let isim = mevcutSlotlar[gun][saat];
+                console.log(gun + " " + saat + " slotunda şu yazıyor: [" + isim + "]");
                 
-                if(slotIsmi === benimIsmim) {
+                // 3. Kontrolü esnetelim: Her türlü "Sirayet" veya "Osman"ı kabul etsin
+                let isimTemiz = isim.toString().toLowerCase().trim();
+                if(isimTemiz.includes("sirayet") || isimTemiz.includes("osman")) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
@@ -322,9 +326,10 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert("Sistemde 'Sirayet' adına kayıtlı slot bulunamadı. Lütfen slot listesini kontrol et."); 
+        alert("Sistemde slotunu bulamadım. F12'ye basıp 'Console' sekmesine bak, orada slotunda ne yazdığı çıkıyor!"); 
         return; 
     }
+}
     
     let metin = "Hangi slotunu vermek istiyorsun?\n\n";
     benimSlotlarim.forEach((item, idx) => { metin += `${idx + 1}) ${item.gun} - ${item.saat}\n`; });
