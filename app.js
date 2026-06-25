@@ -17,7 +17,6 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
-// Büyük-küçük harf veya boşluktan kaynaklı buton/takas kilitlenmelerini çözen yardımcı fonksiyon
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
@@ -38,7 +37,6 @@ function getAktifIsim(user) {
 
 let mevcutSlotlar = {}; 
 
-// ÇÖKMEYİ ENGELLEYEN YENİ FORMAT: Saatlerdeki noktalar (.) iki nokta (:) yapıldı.
 const varsayilanProgram = {
     "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
@@ -57,18 +55,38 @@ document.addEventListener("DOMContentLoaded", () => {
         anaKapsayici.appendChild(yeniDiv);
     }
 
+    // Özel Takas Arayüzü için dinamik Modal penceresi HTML'e ekleniyor (Prompt yerine bu açılacak)
+    if (!document.getElementById("ozel-takas-modal")) {
+        const modalDiv = document.createElement("div");
+        modalDiv.id = "ozel-takas-modal";
+        modalDiv.className = "fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center hidden p-4";
+        modalDiv.innerHTML = `
+            <div class="bg-[#0b1329] border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="text-white font-black flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-right-left text-cyan-400"></i> SAHNE TAKAS PENCERESİ
+                    </h3>
+                    <button onclick="document.getElementById('ozel-takas-modal').classList.add('hidden')" class="text-slate-400 hover:text-white text-xs">✕</button>
+                </div>
+                <p id="takas-modal-aciklama" class="text-xs text-slate-300 leading-relaxed"></p>
+                <div class="space-y-2" id="takas-edilebilir-slotlar"></div>
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+    }
+
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
     CanliTakaslariDinle();
     setTimeout(HavaDurumuGetir, 500);
     setInterval(CanliSahneVeGeriSayimMotoru, 1000);
 
-    // HTML'deki buton kurgusuna inline onclick ezmemesi için global fonksiyonları window'a bağlıyoruz
     window.googleGirisYap = googleGirisYap;
     window.cikisYap = cikisYap;
     window.sahneAl = sahneAl;
     window.slotBiral = slotBiral;
     window.takasPenceresiAc = takasPenceresiAc;
+    window.takasTalebiGonder = takasTalebiGonder;
     window.takasOnayla = takasOnayla;
     window.takasReddet = takasReddet;
     window.notEkle = notEkle;
@@ -114,7 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
-        // Eğer veritabanı boşsa VEYA içinde hala o eski noktalı (.00) veri kalmışsa temizleyip doğrusunu yazar
         if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
@@ -186,7 +203,7 @@ function CanliSahneVeGeriSayimMotoru() {
         if (saat >= 0 && saat < 12) {
             kalanSaniye = sonrakiHedef - toplamGecenSaniye;
         } else {
-            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrakiHedef;
+            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrape_hedef;
         }
 
         const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
@@ -217,11 +234,12 @@ function ProgramiCiz(veri) {
 
         saatler.forEach(saat => {
             const isim = aktifVeri[gun] && aktifVeri[gun][saat] ? aktifVeri[gun][saat] : "BOŞ";
+            
+            // "BOŞ" VEYA "" GELDİĞİNDE EKRANDA ARTIK ESKİ İSİM ASLA KALMAYACAK, "MÜSAİT" YAZACAK
             const isBoş = isim === "BOŞ" || isim === "";
             const temizSlotIsmi = isimTemizle(isim);
             
-            // Sirayet / Osman Faruk Terzi eşleşmesini kusursuzlaştıran kontrol
-            const isOwner = currentUser && (temizSlotIsmi === benimIsmimTemiz);
+            const isOwner = currentUser && !isBoş && (temizSlotIsmi === benimIsmimTemiz);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
             let kartStili = "bg-[#050b18] border border-slate-800/80";
@@ -304,7 +322,7 @@ function slotBiral(gun, saat) {
     if (!currentUser) return;
     let isim = getAktifIsim(currentUser);
     
-    if (!confirm(`${gun} ${saat} slotunu "${isim}" olarak boşaltmak istediğine emin misin?`)) return;
+    if (!confirm(`${gun} ${saat} slotunu boşa çıkarmak istediğine emin misin?`)) return;
 
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
         db.ref("notlar").push({
@@ -319,7 +337,7 @@ function sahneAl(gun, saat) {
     if (!currentUser) return;
     let isim = getAktifIsim(currentUser);
     
-    if (!confirm(`${gun} ${saat} slotunu "${isim}" olarak almak istiyor musun?`)) return;
+    if (!confirm(`${gun} ${saat} slotunu üstünüze almak istiyor musunuz?`)) return;
 
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
         db.ref("notlar").push({
@@ -329,9 +347,11 @@ function sahneAl(gun, saat) {
     });
 }
 
+// PROMPT EKRANI YERİNE AÇILAN MODERN SLOT SEÇİM PENCERESİ
 function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     if(!currentUser) return;
-    let benimIsmimTemiz = isimTemizle(getAktifIsim(currentUser)); 
+    let benimIsmim = getAktifIsim(currentUser);
+    let benimIsmimTemiz = isimTemizle(benimIsmim); 
     let benimSlotlarim = [];
 
     Object.keys(mevcutSlotlar).forEach(gun => {
@@ -346,31 +366,45 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Sistemde sizin adınıza aktif bir slot bulunamadı!`); 
+        alert(`Sistemde kendi adınıza ait aktif bir slot bulunamadı! Önce bir slot almalısınız.`); 
         return; 
     }
     
-    let metin = "Hangi slotunu vermek istiyorsun?\n\n";
-    benimSlotlarim.forEach((item, idx) => { metin += `${idx + 1}) ${item.gun} - ${item.saat}\n`; });
+    const modal = document.getElementById("ozel-takas-modal");
+    const modalAciklama = document.getElementById("takas-modal-aciklama");
+    const slotlarAlani = document.getElementById("takas-edilebilir-slotlar");
     
-    let secim = prompt(metin);
-    let idx = parseInt(secim) - 1;
-    
-    if(isNaN(idx) || idx < 0 || idx >= benimSlotlarim.length) return;
+    modalAciklama.innerHTML = `<span class="text-cyan-400 font-bold">${karsiMuzisyen}</span> isimli müzisyenin <span class="text-amber-400 font-bold">${karsiGun} (${karsiSaat})</span> slotunu almak için karşılığında vermek istediğiniz kendi slotunuzu aşağıdan seçin:`;
+    slotlarAlani.innerHTML = "";
 
-    let bSlot = benimSlotlarim[idx];
+    benimSlotlarim.forEach(item => {
+        slotlarAlani.innerHTML += `
+            <button onclick="window.takasTalebiGonder('${item.gun}', '${item.saat}', '${karsiMuzisyen}', '${karsiGun}', '${karsiSaat}')" 
+                class="w-full text-left bg-[#050b18] hover:bg-cyan-950/40 border border-slate-800 hover:border-cyan-500/40 p-3 rounded-xl text-xs text-white transition font-semibold flex justify-between items-center cursor-pointer">
+                <span>${item.gun} — ${item.saat}</span>
+                <i class="fa-solid fa-chevron-right text-slate-500 text-[10px]"></i>
+            </button>
+        `;
+    });
+
+    modal.classList.remove("hidden");
+}
+
+function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
+    document.getElementById("ozel-takas-modal").classList.add("hidden");
+    let benimIsmim = getAktifIsim(currentUser);
 
     db.ref("takas_talepleri").push().set({
         gonderenUid: currentUser.uid,
-        gonderenIsim: getAktifIsim(currentUser),
-        gonderenGun: bSlot.gun,
-        gonderenSaat: bSlot.saat,
-        aliciIsim: karsiMuzisyen,
-        aliciGun: karsiGun,
-        aliciSaat: karsiSaat,
+        gonderenIsim: benimIsmim,
+        gonderenGun: bGun,
+        gonderenSaat: bSaat,
+        aliciIsim: kMuzisyen,
+        aliciGun: kGun,
+        aliciSaat: kSaat,
         durum: "beklemede"
     });
-    alert("Takas talebiniz başarıyla gönderildi!");
+    alert("Takas talebi karşı tarafa başarıyla iletildi!");
 }
 
 function CanliTakaslariDinle() {
@@ -393,22 +427,23 @@ function CanliTakaslariDinle() {
             const targetNameTemiz = isimTemizle(req.aliciIsim);
             const isImTarget = (targetNameTemiz === benimIsmimTemiz);
 
+            // TAM İSTEDİĞİN O AKILLI VE ANLAŞILIR BİLDİRİM METNİ KURGULANDI:
             if(isImTarget) {
                 alani.innerHTML += `
-                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-3 rounded-xl space-y-2 shadow-md">
-                        <p class="text-slate-200 leading-relaxed">
-                            <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunu, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotuyla değiştirmek istiyor.
+                    <div class="bg-gradient-to-br from-cyan-950/40 to-slate-900 border border-cyan-500/30 p-4 rounded-xl space-y-3 shadow-md">
+                        <p class="text-xs text-slate-200 leading-relaxed">
+                            <span class="text-cyan-400 font-extrabold">${req.gonderenIsim}</span>, kendi <span class="text-emerald-400 font-bold">${req.gonderenGun} ${req.gonderenSaat}</span> slotunu, senin <span class="text-amber-400 font-bold">${req.aliciGun} ${req.aliciSaat}</span> slotunla değiştirmek istiyor.
                         </p>
                         <div class="flex gap-2 pt-1">
-                            <button onclick="window.takasOnayla('${key}')" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1 rounded transition text-[10px] cursor-pointer">Kabul Et</button>
-                            <button onclick="window.takasReddet('${key}')" class="flex-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold py-1 rounded transition text-[10px] cursor-pointer">Reddet</button>
+                            <button onclick="window.takasOnayla('${key}')" class="flex-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-1.5 rounded transition text-[10px] cursor-pointer">Kabul Et</button>
+                            <button onclick="window.takasReddet('${key}')" class="flex-1 bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold py-1.5 rounded transition text-[10px] cursor-pointer">Reddet</button>
                         </div>
                     </div>`;
             } else {
                 alani.innerHTML += `
-                    <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 text-slate-400 text-[11px]">
+                    <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 text-slate-400 text-[11px] mb-2">
                         <i class="fa-solid fa-spinner animate-spin text-cyan-500 mr-1"></i> 
-                        <span class="text-slate-300 font-bold">${req.gonderenIsim}</span> ➔ <span class="text-slate-300 font-bold">${req.aliciIsim}</span> takas teklifi değerlendiriliyor.
+                        <span class="text-slate-300 font-bold">${req.gonderenIsim}</span> ➔ <span class="text-slate-300 font-bold">${req.aliciIsim}</span> takas teklifi değerlendiriliyor...
                     </div>`;
             }
         });
@@ -455,7 +490,7 @@ function CanliVerileriDinle() {
             pano.innerHTML += `
                 <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800/80 mb-2">
                     <span class="font-bold text-orange-400 block mb-0.5">${item.isim}:</span>
-                    <p class="text-slate-300 pr-4">${item.mesaj}</p>
+                    <p class="text-slate-300 pr-4 text-xs">${item.mesaj}</p>
                 </div>`;
         });
     });
