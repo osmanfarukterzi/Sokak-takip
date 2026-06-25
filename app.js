@@ -17,7 +17,6 @@ const mailToName = {
     "osmanfarukterzi@gmail.com": "Sirayet"
 };
 
-// Karakter hatalarından dolayı butonların bozulmasını önleyen ultra güvenli temizleyici
 function isimTemizle(isim) {
     if(!isim) return "";
     return isim.toString().trim().toLowerCase()
@@ -132,12 +131,13 @@ document.addEventListener("DOMContentLoaded", () => {
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
+        // Eğer veritabanı tamamen boşsa veya eski noktalı sistem kaldıysa varsayılanı yükle
         if (!veriler || Object.keys(veriler).length === 0 || snapshot.child("Pazartesi/12.00-15.00").exists()) {
             db.ref("haftalik_slotlar").set(varsayilanProgram);
             veriler = varsayilanProgram;
         }
         mevcutSlotlar = veriler;
-        ProgramiCiz(veriler);
+        ProgramiCiz(mevcutSlotlar);
         CanliSahneVeGeriSayimMotoru();
     });
 }
@@ -222,6 +222,7 @@ function ProgramiCiz(veri) {
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
 
+    // KRİTİK DÜZELTME: Eğer veritabanından güncel nesne geldiyse, inatla yukardaki varsayilanProgram nesnesine dönme!
     const aktifVeri = (veri && Object.keys(veri).length > 0) ? veri : varsayilanProgram;
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
     programAkisi.innerHTML = "";
@@ -237,7 +238,7 @@ function ProgramiCiz(veri) {
             const isBoş = isim === "BOŞ" || isim === "";
             const temizSlotIsmi = isimTemizle(isim);
             
-            // GELİŞMİŞ ESNEK EŞLEŞME: İsimler birbirini içeriyorsa (örn: "sirayet" ve "osman faruk sirayet") tam uyumlu sayılır.
+            // Ultra esnek isim doğrulama
             const isOwner = currentUser && !isBoş && (temizSlotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(temizSlotIsmi));
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             
@@ -328,11 +329,8 @@ function slotBiral(gun, saat) {
             isim: "📢 BİLDİRİM",
             mesaj: `${isim}, ${gun} ${saat} slotunu boşa çıkardı.`
         });
-        // Veritabanı değiştikten sonra lokal nesneyi de anında güncelliyoruz ki arayüz takılmasın
-        if(mevcutSlotlar[gun]) mevcutSlotlar[gun][saat] = "BOŞ";
-        ProgramiCiz(mevcutSlotlar);
         alert("Slot başarıyla boşaltıldı.");
-    }).catch(err => alert("Hata oluştu: " + err.message));
+    }).catch(err => alert("Hata: " + err.message));
 }
 
 function sahneAl(gun, saat) {
@@ -341,13 +339,12 @@ function sahneAl(gun, saat) {
     
     if (!confirm(`${gun} ${saat} slotunu üstünüze almak istiyor musunuz?`)) return;
 
+    // DÜZELTME: Tırnak içindeki "isim" kaldırıldı, dinamik isim değişkeni atandı!
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(isim).then(() => {
         db.ref("notlar").push({
             isim: "✅ YENİ SLOT",
             mesaj: `${isim}, ${gun} ${saat} slotunu aldı.`
         });
-        if(mevcutSlotlar[gun]) mevcutSlotlar[gun][saat] = "isim";
-        ProgramiCiz(mevcutSlotlar);
     });
 }
 
@@ -361,7 +358,6 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         if(mevcutSlotlar[gun]) {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] ? isimTemizle(mevcutSlotlar[gun][saat]) : "";
-                // Esnek eşleşme burada da devrede
                 if(slotIsmi !== "" && slotIsmi !== "bos" && (slotIsmi.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(slotIsmi))) {
                     benimSlotlarim.push({ gun: gun, saat: saat });
                 }
@@ -429,7 +425,6 @@ function CanliTakaslariDinle() {
             talepVarmi = true;
 
             const targetNameTemiz = isimTemizle(req.aliciIsim);
-            // Alıcı ismi eşleşme kontrolü esnekleştirildi
             const isImTarget = (targetNameTemiz.includes(benimIsmimTemiz) || benimIsmimTemiz.includes(targetNameTemiz));
 
             if(isImTarget) {
