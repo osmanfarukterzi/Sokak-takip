@@ -1,3 +1,14 @@
+Elbette hatırlıyorum Osman! Hatta takvime bakarsan şu an 6 Temmuz Pazartesi gününe girdik bile, tam zamanı gelmiş. Sistemi yeni haftaya geçirmek için o konuştuğumuz, sadece sana (Sirayet) özel olan **"Sıfırlama Butonunu"** ekledim.
+
+### Ne Değişti?
+
+1. **Sadece Sen Göreceksin:** Kendi Gmail'inle giriş yaptığında isminin (Sirayet) yanında sarı renkli gizli bir **"Haftayı Sıfırla 👑"** butonu çıkacak. Diğer müzisyenler bunu kesinlikle görmeyecek.
+2. **Akıllı Sıfırlama:** Butona bastığında sistem sana yeni haftanın başlığını soracak (Örn: *6 Temmuz - 12 Temmuz*). Onayladığın an; geçen haftaki tüm takaslar ve fazladan alınan slotlar silinecek, takvim herkesin **kendi sabit 3 slotunun bulunduğu orijinal haline** (varsayılan programına) geri dönecek.
+3. **Sabit Tarih Sorunu Çözüldü:** Eskiden kodun içine `29 Haziran - 5 Temmuz` diye sabit yazdığımız satırı kaldırdım. Artık başlık veritabanından, yani senin girdiğin yeni tarihten okunacak.
+
+Mevcut `app.js` dosyanın **tamamını silip** aşağıdaki yeni versiyonu yapıştırman yeterli:
+
+```javascript
 const firebaseConfig = {
     apiKey: "AIzaSyCOAmbaMQw6YLxXFPlFKgk1AJGHx-1BBrs",
     authDomain: "besiktas-meydan-takip.firebaseapp.com",
@@ -53,7 +64,6 @@ function getAktifIsim(user) {
         "orsun52@gmail.com": "Raşit"
     };
 
-    // Eğer e-posta listede varsa sahne adını döndür, yoksa mailin ilk kısmını göster
     return muzisyenler[email] || email.split('@')[0];
 }
 
@@ -74,7 +84,7 @@ function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
 }
 
 const varsayilanProgram = {
-    "tarih_basligi": "29 Haziran - 5 Temmuz",
+    "tarih_basligi": "Varsayılan Hafta",
     "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkhan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
     "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkhan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
@@ -84,7 +94,6 @@ const varsayilanProgram = {
     "Pazar":     { "12:00-15:00": "Yiğit", "15:00-18:00": "Farnefes", "18:00-21:00": "Samet", "21:00-24:00": "Enes" }
 };
 
-// --- YENİ EKLENEN: Eylem Kaydetme Fonksiyonu ---
 function eylemKaydet(mesaj) {
     db.ref("meydan_eylemleri").push({
         metin: mesaj,
@@ -122,6 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.takasReddet = takasReddet;
     window.takasIptalEt = takasIptalEt;
     window.notEkle = notEkle;
+    window.haftayiSifirla = haftayiSifirla; // SADECE ADMİNE ÖZEL
 
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
@@ -138,11 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
             currentUser = user;
             let aktifIsim = getAktifIsim(user);
             if(notYazanInput) notYazanInput.value = aktifIsim;
+
+            // Admin Yetki Kontrolü: Sadece Sirayet ise butonu göster
+            let adminButonHtml = "";
+            if (aktifIsim === "Sirayet") {
+                adminButonHtml = `<button onclick="window.haftayiSifirla()" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black ml-2 px-2 py-1 rounded-lg cursor-pointer shadow-md border border-amber-400 transition">Haftayı Sıfırla 👑</button>`;
+            }
+
             if(authArea) {
                 authArea.innerHTML = `
                     <div class="flex items-center gap-2 bg-[#050b18] py-1.5 px-3 rounded-xl border border-emerald-500/30 shadow-sm">
                         <img src="${user.photoURL}" class="w-6 h-6 rounded-full border border-emerald-500" referrerpolicy="no-referrer">
                         <span class="text-xs font-bold text-emerald-400">${aktifIsim}</span>
+                        ${adminButonHtml}
                         <button onclick="window.cikisYap()" class="text-[10px] text-rose-400 ml-2 hover:underline cursor-pointer">Çıkış</button>
                     </div>
                 `;
@@ -168,20 +186,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
+// YENİ EKLENEN: HAFTAYI SIFIRLAMA FONKSİYONU
+function haftayiSifirla() {
+    let yeniBaslik = prompt("Yeni haftanın başlığını girin:\n(Örneğin: 6 Temmuz - 12 Temmuz)");
+    if (!yeniBaslik) return; // Kullanıcı iptal ettiyse dur
+
+    if (!confirm("DİKKAT: Takvimdeki ekstra alınan veya bırakılan tüm slotlar sıfırlanacak! Takvim herkesin kendi 3 slotunun bulunduğu orijinal haline (Varsayılan Program) dönecek.\n\nBunu onaylıyor musun?")) return;
+
+    // Orijinal (Varsayılan) programın bir kopyasını al
+    let yeniHafta = JSON.parse(JSON.stringify(varsayilanProgram));
+    yeniHafta.tarih_basligi = yeniBaslik; // Adminin girdiği yeni başlığı ata
+
+    db.ref("haftalik_slotlar").set(yeniHafta).then(() => {
+        eylemKaydet(`👑 SİSTEM YÖNETİCİSİ (Sirayet): Yeni hafta (${yeniBaslik}) başlatıldı ve takvim sıfırlandı.`);
+        alert("Yeni hafta başarıyla başlatıldı Osman!");
+    }).catch(err => alert("Bir hata oluştu: " + err.message));
+}
+
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
         
-        // BAŞLIK İÇİN KESİN ÇÖZÜM: 
-        const GUNCEL_BASLIK = "29 Haziran - 5 Temmuz";
-        
+        // Eğer veritabanı boşsa (ilk kurulumda) varsayılanı yükle
         if (!veriler || Object.keys(veriler).length === 0) {
-            let baslangic = { ...varsayilanProgram };
-            baslangic.tarih_basligi = GUNCEL_BASLIK;
+            let baslangic = JSON.parse(JSON.stringify(varsayilanProgram));
+            baslangic.tarih_basligi = "29 Haziran - 5 Temmuz"; // İlk açılış yedeği
             db.ref("haftalik_slotlar").set(baslangic);
             veriler = baslangic;
-        } else {
-            veriler.tarih_basligi = GUNCEL_BASLIK;
         }
 
         mevcutSlotlar = veriler;
@@ -192,7 +223,6 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-// --- DÜZELTME: Sahne Al Fonksiyonu (5 Slot Sınırı ve Log) ---
 window.sahneAl = function(gun, saat) {
     if (!currentUser) {
         alert("Slot alabilmek için önce giriş yapmalısın!");
@@ -364,7 +394,6 @@ function CanliTakaslariDinle() {
     });
 }
 
-// --- DÜZELTME: Takas Onay ve Ret Fonksiyonları (Loglu) ---
 function takasOnayla(talepKey) {
     db.ref(`takas_talepleri/${talepKey}`).once("value", snapshot => {
         const req = snapshot.val();
@@ -376,7 +405,7 @@ function takasOnayla(talepKey) {
         guncelleme[`takas_talepleri/${talepKey}/durum`] = "onaylandi";
 
         db.ref().update(guncelleme).then(() => {
-            eylemKaydet(`🔄 TAKAS BAŞARILI: ${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini takas etti.`);
+            eylemKaydet(`🔄 TAKAS BAŞARILI: ${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini karşılıklı takas etti.`);
             db.ref("notlar").push({
                 uid: "sistem",
                 isim: "🔄 TAKAS BAŞARILI",
@@ -403,7 +432,7 @@ function takasReddet(talepKey) {
 function ProgramiCiz(veri) {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
     
-    // Güvenlik: Veriden başlığı al, yoksa "MEYDAN SLOT TAKVİMİ" yaz
+    // Veritabanından gelen başlığı ekrana yansıt
     let baslikMetni = (veri && veri.tarih_basligi && veri.tarih_basligi.trim() !== "") 
         ? veri.tarih_basligi 
         : "MEYDAN SLOT TAKVİMİ";
@@ -426,7 +455,6 @@ function ProgramiCiz(veri) {
         const saatler = ["12:00-15:00", "15:00-18:00", "18:00-21:00", "21:00-24:00"];
 
         saatler.forEach(saat => {
-            // Veri kontrolü: aktifVeri[gun] var mı bak, yoksa boş kabul et
             const isim = (aktifVeri[gun] && aktifVeri[gun][saat]) ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
             
@@ -680,7 +708,6 @@ function SohbetOdasiDinle() {
             const m = veriler[key];
             const isMe = currentUser && m.isim === getAktifIsim(currentUser);
             
-            // Kimin yazdığına göre sağa veya sola yasla
             sohbetKutusu.innerHTML += `
                 <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                     <span class="text-[10px] text-slate-500 font-bold mb-0.5 px-1">${m.isim}</span>
@@ -690,7 +717,6 @@ function SohbetOdasiDinle() {
                 </div>`;
         });
         
-        // Sohbeti otomatik en aşağı kaydır
         sohbetKutusu.scrollTop = sohbetKutusu.scrollHeight;
     });
 }
@@ -735,7 +761,6 @@ function cikisYap() { auth.signOut(); }
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        // Giriş yapan kullanıcıyı global değişkene eşitliyoruz
         window.currentUser = user; 
         const benimIsmim = getAktifIsim(user);
 
@@ -745,11 +770,9 @@ firebase.auth().onAuthStateChanged((user) => {
             girisTarihi: Date.now()
         });
 
-        // Tarayıcı sekmesi veya sayfa kapatıldığında Firebase bu kaydı otomatik siler
         onlineRef.onDisconnect().remove();
 
     } else {
-        // Eğer kullanıcı çıkış (Logout) yaparsa ismi aktif listesinden silinsin
         if (window.currentUser) {
             db.ref("sistemde_aktif_olanlar/" + window.currentUser.uid).remove();
         }
@@ -766,7 +789,6 @@ function AktifMuzisyenleriDinle() {
         listeKutusu.innerHTML = "";
         const veriler = snapshot.val();
 
-        // Eğer kimse aktif değilse
         if (!veriler) {
             if (rozet) rozet.innerText = "0 Aktif";
             listeKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center py-4">Şu an kimse online değil.</div>`;
@@ -775,10 +797,8 @@ function AktifMuzisyenleriDinle() {
 
         const aktifKullanicilar = Object.values(veriler);
         
-        // Sağ üstteki rozet sayısını güncelle (Örn: "3 Aktif")
         if (rozet) rozet.innerText = `${aktifKullanicilar.length} Aktif`;
 
-        // Aktif olan herkesi yeşil ışık efektiyle (pulse) listele
         aktifKullanicilar.forEach(kullanici => {
             listeKutusu.innerHTML += `
                 <div class="flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs transition hover:border-cyan-500/30">
@@ -809,7 +829,6 @@ function MeydanEylemleriniDinle() {
             return;
         }
 
-        // En son yapılan eylemler en üstte görünecek şekilde ters çeviriyoruz
         Object.values(veriler).reverse().forEach(eylem => {
             const saat = new Date(eylem.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
             
@@ -823,6 +842,7 @@ function MeydanEylemleriniDinle() {
     });
 }
 
-// Sayfa açıldığında dinlemeyi başlat
 MeydanEylemleriniDinle();
 AktifMuzisyenleriDinle();
+
+```
