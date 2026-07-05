@@ -1,14 +1,3 @@
-Elbette hatırlıyorum Osman! Hatta takvime bakarsan şu an 6 Temmuz Pazartesi gününe girdik bile, tam zamanı gelmiş. Sistemi yeni haftaya geçirmek için o konuştuğumuz, sadece sana (Sirayet) özel olan **"Sıfırlama Butonunu"** ekledim.
-
-### Ne Değişti?
-
-1. **Sadece Sen Göreceksin:** Kendi Gmail'inle giriş yaptığında isminin (Sirayet) yanında sarı renkli gizli bir **"Haftayı Sıfırla 👑"** butonu çıkacak. Diğer müzisyenler bunu kesinlikle görmeyecek.
-2. **Akıllı Sıfırlama:** Butona bastığında sistem sana yeni haftanın başlığını soracak (Örn: *6 Temmuz - 12 Temmuz*). Onayladığın an; geçen haftaki tüm takaslar ve fazladan alınan slotlar silinecek, takvim herkesin **kendi sabit 3 slotunun bulunduğu orijinal haline** (varsayılan programına) geri dönecek.
-3. **Sabit Tarih Sorunu Çözüldü:** Eskiden kodun içine `29 Haziran - 5 Temmuz` diye sabit yazdığımız satırı kaldırdım. Artık başlık veritabanından, yani senin girdiğin yeni tarihten okunacak.
-
-Mevcut `app.js` dosyanın **tamamını silip** aşağıdaki yeni versiyonu yapıştırman yeterli:
-
-```javascript
 const firebaseConfig = {
     apiKey: "AIzaSyCOAmbaMQw6YLxXFPlFKgk1AJGHx-1BBrs",
     authDomain: "besiktas-meydan-takip.firebaseapp.com",
@@ -844,5 +833,3 @@ function MeydanEylemleriniDinle() {
 
 MeydanEylemleriniDinle();
 AktifMuzisyenleriDinle();
-
-```
