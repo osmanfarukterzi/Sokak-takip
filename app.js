@@ -33,47 +33,29 @@ function isimTemizle(isim) {
 
 function getAktifIsim(user) {
     if (!user || !user.email) return "";
-    
-    // E-postayı her ihtimale karşı küçük harfe çevirip boşluklarını temizliyoruz
     const email = user.email.toLowerCase().trim();
-    
-    // E-posta ve Müzisyen eşleştirme tablosu
     const muzisyenler = {
-        "osmanfarukterzi@gmail.com": "Sirayet",
-        "mamiiibennn@gmail.com": "Mami",
-        "berkhan54d@gmail.com": "Berkhan",
-        "ugurpoyrazz93@gmail.com": "Uğur",
-        "y.kuloglu53@gmail.com": "Yiğit",
-        "faruk.kayya@gmail.com": "Farnefes",
-        "ismtadymn0667@gmail.com": "İsmet",
-        "infoenesozdmr@gmail.com": "Enes",
-        "cannebigs@gmail.com": "Nebi",
-        "dogadenizyilmaz@gmail.com": "Doğa",
-        "harbidensametofficial@gmail.com": "Samet",
-        "orsun52@gmail.com": "Raşit"
+        "osmanfarukterzi@gmail.com": "Sirayet", "mamiiibennn@gmail.com": "Mami", "berkhan54d@gmail.com": "Berkhan",
+        "ugurpoyrazz93@gmail.com": "Uğur", "y.kuloglu53@gmail.com": "Yiğit", "faruk.kayya@gmail.com": "Farnefes",
+        "ismtadymn0667@gmail.com": "İsmet", "infoenesozdmr@gmail.com": "Enes", "cannebigs@gmail.com": "Nebi",
+        "dogadenizyilmaz@gmail.com": "Doğa", "harbidensametofficial@gmail.com": "Samet", "orsun52@gmail.com": "Raşit"
     };
-
     return muzisyenler[email] || email.split('@')[0];
 }
 
 function benimSlotumMu(slotIsmi, kullanıcıIsmi) {
     let temizSlot = isimTemizle(slotIsmi);
     let temizKullanici = isimTemizle(kullanıcıIsmi);
-    
-    if (temizSlot.includes("farnefes")) {
-        return false; 
-    }
-    
+    if (temizSlot.includes("farnefes")) return false; 
     if (temizKullanici === "sirayet" || temizKullanici === "osman" || temizKullanici === "faruk") {
         if (temizSlot === "faruk") return true;
         return temizSlot.includes("sirayet") || temizSlot.includes("osman");
     }
-    
     return temizSlot === temizKullanici;
 }
 
 const varsayilanProgram = {
-    "tarih_basligi": "Varsayılan Hafta",
+    "tarih_basligi": "Varsayılan Başlangıç Hafta",
     "Pazartesi": { "12:00-15:00": "Nebi", "15:00-18:00": "Sirayet", "18:00-21:00": "Berkhan", "21:00-24:00": "Uğur" },
     "Salı":      { "12:00-15:00": "Doğa", "15:00-18:00": "Raşit", "18:00-21:00": "Samet", "21:00-24:00": "İsmet" },
     "Çarşamba":  { "12:00-15:00": "Uğur", "15:00-18:00": "Berkhan", "18:00-21:00": "Nebi", "21:00-24:00": "Samet" },
@@ -84,10 +66,7 @@ const varsayilanProgram = {
 };
 
 function eylemKaydet(mesaj) {
-    db.ref("meydan_eylemleri").push({
-        metin: mesaj,
-        tarih: Date.now()
-    });
+    db.ref("meydan_eylemleri").push({ metin: mesaj, tarih: Date.now() });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -110,8 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(modalDiv);
     }
 
-    window.googleGirisYap = googleGirisYap;
-    window.cikisYap = cikisYap;
+    window.googleGirisYap = function() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); };
+    window.cikisYap = function() { auth.signOut(); };
     window.sahneAl = sahneAl;
     window.slotBiral = slotBiral;
     window.takasPenceresiAc = takasPenceresiAc;
@@ -120,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.takasReddet = takasReddet;
     window.takasIptalEt = takasIptalEt;
     window.notEkle = notEkle;
-    window.haftayiSifirla = haftayiSifirla; // SADECE ADMİNE ÖZEL
+    window.haftayiSifirla = haftayiSifirla; 
 
     VeritabaniniKontrolEtVeDinle();
     CanliVerileriDinle();
@@ -138,10 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
             let aktifIsim = getAktifIsim(user);
             if(notYazanInput) notYazanInput.value = aktifIsim;
 
-            // Admin Yetki Kontrolü: Sadece Sirayet ise butonu göster
             let adminButonHtml = "";
             if (aktifIsim === "Sirayet") {
-                adminButonHtml = `<button onclick="window.haftayiSifirla()" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black ml-2 px-2 py-1 rounded-lg cursor-pointer shadow-md border border-amber-400 transition">Haftayı Sıfırla 👑</button>`;
+                adminButonHtml = `<button onclick="window.haftayiSifirla()" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black ml-2 px-2 py-1 rounded-lg cursor-pointer shadow-md border border-amber-400 transition">Haftayı Döndür & Sıfırla 👑</button>`;
             }
 
             if(authArea) {
@@ -154,53 +132,82 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }
-            db.ref("muzisyenler/" + user.uid).update({
-                name: aktifIsim,
-                picture: user.photoURL,
-                lastSeen: firebase.database.ServerValue.TIMESTAMP
-            });
+            db.ref("muzisyenler/" + user.uid).update({ name: aktifIsim, picture: user.photoURL, lastSeen: firebase.database.ServerValue.TIMESTAMP });
         } else {
             currentUser = null;
             if(notYazanInput) notYazanInput.value = "";
             if(authArea) {
-                authArea.innerHTML = `
-                    <button onclick="window.googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-2 transition shadow-lg cursor-pointer">
-                        <img src="https://www.google.com/favicon.ico" class="w-4 h-4" alt="Google">
-                        Google ile Giriş Yap
-                    </button>
-                `;
+                authArea.innerHTML = `<button onclick="window.googleGirisYap()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-2 transition shadow-lg cursor-pointer"><img src="https://www.google.com/favicon.ico" class="w-4 h-4"> Google ile Giriş Yap</button>`;
             }
         }
         ProgramiCiz(mevcutSlotlar);
     });
 });
 
-// YENİ EKLENEN: HAFTAYI SIFIRLAMA FONKSİYONU
+// ROTASYON ALGORİTMASI 
 function haftayiSifirla() {
-    let yeniBaslik = prompt("Yeni haftanın başlığını girin:\n(Örneğin: 6 Temmuz - 12 Temmuz)");
-    if (!yeniBaslik) return; // Kullanıcı iptal ettiyse dur
+    let yeniBaslik = prompt("Yeni haftanın başlığını girin:\n(Örneğin: 13 Temmuz - 19 Temmuz)");
+    if (!yeniBaslik) return; 
 
-    if (!confirm("DİKKAT: Takvimdeki ekstra alınan veya bırakılan tüm slotlar sıfırlanacak! Takvim herkesin kendi 3 slotunun bulunduğu orijinal haline (Varsayılan Program) dönecek.\n\nBunu onaylıyor musun?")) return;
+    if (!confirm("DİKKAT: Ana kadro rotasyon kurallarına göre (Hafta içi kendi içinde, hafta sonu yılan şeklinde) KAYDIRILACAK ve tüm geçici takaslar sıfırlanacak.\n\nOnaylıyor musun?")) return;
 
-    // Orijinal (Varsayılan) programın bir kopyasını al
-    let yeniHafta = JSON.parse(JSON.stringify(varsayilanProgram));
-    yeniHafta.tarih_basligi = yeniBaslik; // Adminin girdiği yeni başlığı ata
+    db.ref("sabit_ana_kadro").once("value", snapshot => {
+        let eskiKadro = snapshot.val();
+        if (!eskiKadro) eskiKadro = JSON.parse(JSON.stringify(varsayilanProgram));
+        
+        let yeniKadro = JSON.parse(JSON.stringify(eskiKadro));
+        yeniKadro.tarih_basligi = yeniBaslik;
 
-    db.ref("haftalik_slotlar").set(yeniHafta).then(() => {
-        eylemKaydet(`👑 SİSTEM YÖNETİCİSİ (Sirayet): Yeni hafta (${yeniBaslik}) başlatıldı ve takvim sıfırlandı.`);
-        alert("Yeni hafta başarıyla başlatıldı Osman!");
-    }).catch(err => alert("Bir hata oluştu: " + err.message));
+        // Kural 1 ve 2: Hafta içi
+        const haftaIci = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"];
+        haftaIci.forEach(gun => {
+            // 12:00-15:00 Sabit kalıyor (yeniKadro'da deep copy yapıldığı için aynı kalır)
+            // Diğerleri kendi içinde dönüyor
+            yeniKadro[gun]["18:00-21:00"] = eskiKadro[gun]["15:00-18:00"];
+            yeniKadro[gun]["21:00-24:00"] = eskiKadro[gun]["18:00-21:00"];
+            yeniKadro[gun]["15:00-18:00"] = eskiKadro[gun]["21:00-24:00"];
+        });
+
+        // Kural 3: Hafta sonu 12-15 günleri kayıyor
+        yeniKadro["Cumartesi"]["12:00-15:00"] = eskiKadro["Cuma"]["12:00-15:00"];
+        yeniKadro["Pazar"]["12:00-15:00"] = eskiKadro["Cumartesi"]["12:00-15:00"];
+        yeniKadro["Cuma"]["12:00-15:00"] = eskiKadro["Pazar"]["12:00-15:00"];
+
+        // Kural 4: Hafta sonu diğerleri yılan gibi (zincirleme) kayıyor
+        const zincir = [
+            {g: "Cuma", s: "15:00-18:00"}, {g: "Cuma", s: "18:00-21:00"}, {g: "Cuma", s: "21:00-24:00"},
+            {g: "Cumartesi", s: "15:00-18:00"}, {g: "Cumartesi", s: "18:00-21:00"}, {g: "Cumartesi", s: "21:00-24:00"},
+            {g: "Pazar", s: "15:00-18:00"}, {g: "Pazar", s: "18:00-21:00"}, {g: "Pazar", s: "21:00-24:00"}
+        ];
+
+        for(let i = 0; i < zincir.length; i++) {
+            let suanki = zincir[i];
+            let sonraki = zincir[(i + 1) % zincir.length]; // En sonuncusu 0. indexe döner
+            yeniKadro[sonraki.g][sonraki.s] = eskiKadro[suanki.g][suanki.s];
+        }
+
+        // Güncellenmiş kadroyu kaydet
+        let guncellemeler = {};
+        guncellemeler["sabit_ana_kadro"] = yeniKadro;
+        guncellemeler["haftalik_slotlar"] = yeniKadro;
+        guncellemeler["takas_talepleri"] = null; // Eski haftanın bekleyen taleplerini temizle
+
+        db.ref().update(guncellemeler).then(() => {
+            eylemKaydet(`👑 SİSTEM YÖNETİCİSİ (Sirayet): ${yeniBaslik} haftası başlatıldı. Ana kadro rotasyonu başarıyla uygulandı.`);
+            alert("Mükemmel! Yeni hafta rotasyon kurallarına göre oluşturuldu ve yayına alındı.");
+        }).catch(err => alert("Bir hata oluştu: " + err.message));
+    });
 }
 
 function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
         
-        // Eğer veritabanı boşsa (ilk kurulumda) varsayılanı yükle
+        // Eğer veritabanı boşsa (ilk kurulumda) varsayılanı yükle ve sabit_ana_kadro oluştur
         if (!veriler || Object.keys(veriler).length === 0) {
             let baslangic = JSON.parse(JSON.stringify(varsayilanProgram));
-            baslangic.tarih_basligi = "29 Haziran - 5 Temmuz"; // İlk açılış yedeği
             db.ref("haftalik_slotlar").set(baslangic);
+            db.ref("sabit_ana_kadro").set(baslangic); 
             veriler = baslangic;
         }
 
@@ -213,10 +220,7 @@ function VeritabaniniKontrolEtVeDinle() {
 }
 
 window.sahneAl = function(gun, saat) {
-    if (!currentUser) {
-        alert("Slot alabilmek için önce giriş yapmalısın!");
-        return;
-    }
+    if (!currentUser) { alert("Slot alabilmek için önce giriş yapmalısın!"); return; }
     
     const benimIsmim = getAktifIsim(currentUser);
     const gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
@@ -225,9 +229,7 @@ window.sahneAl = function(gun, saat) {
     gunler.forEach(g => {
         if (mevcutSlotlar && mevcutSlotlar[g]) {
             Object.keys(mevcutSlotlar[g]).forEach(s => {
-                if (mevcutSlotlar[g][s] === benimIsmim) {
-                    toplamSlotSayim++;
-                }
+                if (mevcutSlotlar[g][s] === benimIsmim) toplamSlotSayim++;
             });
         }
     });
@@ -237,14 +239,9 @@ window.sahneAl = function(gun, saat) {
         return;
     }
 
-    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim)
-        .then(() => {
-            eylemKaydet(`✅ ${benimIsmim}, ${gun} ${saat} slotunu rezerve etti.`);
-            console.log("Slot başarıyla alındı.");
-        })
-        .catch((error) => {
-            console.error("Slot alınırken hata oluştu: ", error);
-        });
+    db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim).then(() => {
+        eylemKaydet(`✅ ${benimIsmim}, ${gun} ${saat} slotunu rezerve etti.`);
+    }).catch((error) => console.error("Slot alınırken hata:", error));
 };
 
 function slotBiral(gun, saat) {
@@ -254,8 +251,7 @@ function slotBiral(gun, saat) {
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set("BOŞ").then(() => {
         eylemKaydet(`📢 ${isim}, ${gun} ${saat} slotunu boşalttı.`);
         db.ref("notlar").push({
-            isim: "📢 BİLDİRİM",
-            mesaj: `${isim}, ${gun} ${saat} slotunu boşalttı. Slot şu an rezerve edilebilir!`
+            isim: "📢 BİLDİRİM", mesaj: `${isim}, ${gun} ${saat} slotunu boşalttı. Slot şu an rezerve edilebilir!`
         });
     }).catch(err => alert("Hata: " + err.message));
 }
@@ -269,17 +265,15 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
         if(mevcutSlotlar[gun] && gun !== "tarih_basligi") {
             Object.keys(mevcutSlotlar[gun]).forEach(saat => {
                 let slotIsmi = mevcutSlotlar[gun][saat] || "";
-                if(slotIsmi !== "" && slotIsmi !== "BOŞ") {
-                    if (benimSlotumMu(slotIsmi, benimIsmim)) {
-                        benimSlotlarim.push({ gun: gun, saat: saat });
-                    }
+                if(slotIsmi !== "" && slotIsmi !== "BOŞ" && benimSlotumMu(slotIsmi, benimIsmim)) {
+                    benimSlotlarim.push({ gun: gun, saat: saat });
                 }
             });
         }
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Şu anda takvimde senin adına (${benimIsmim}) ait aktif bir slot bulamadık. Önce boş bir slot almalısın.`); 
+        alert(`Şu anda takvimde senin adına (${benimIsmim}) ait aktif bir slot bulamadık.`); 
         return; 
     }
     
@@ -293,13 +287,12 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     benimSlotlarim.forEach(item => {
         slotlarAlani.innerHTML += `
             <button onclick="window.takasTalebiGonder('${item.gun}', '${item.saat}', '${karsiMuzisyen}', '${karsiGun}', '${karsiSaat}')" 
-                class="w-full text-left bg-[#050b18] hover:bg-cyan-950/50 border border-slate-800 hover:border-cyan-500/50 p-3 rounded-xl text-xs text-white transition font-semibold flex justify-between items-center cursor-pointer group shadow-sm">
+                class="w-full text-left bg-[#050b18] hover:bg-cyan-950/50 border border-slate-800 p-3 rounded-xl text-xs text-white group shadow-sm flex justify-between items-center cursor-pointer">
                 <span class="group-hover:text-cyan-400 transition">${item.gun} — ${item.saat}</span>
                 <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 group-hover:bg-cyan-500 group-hover:text-slate-950 transition">Seç ve Gönder</span>
             </button>
         `;
     });
-
     modal.classList.remove("hidden");
 }
 
@@ -308,25 +301,17 @@ function takasTalebiGonder(bGun, bSaat, kMuzisyen, kGun, kSaat) {
     let benimIsmim = getAktifIsim(currentUser);
 
     db.ref("takas_talepleri").push().set({
-        gonderenUid: currentUser.uid,
-        gonderenIsim: benimIsmim,
-        gonderenGun: bGun,
-        gonderenSaat: bSaat,
-        aliciIsim: kMuzisyen,
-        aliciGun: kGun,
-        aliciSaat: kSaat,
-        durum: "beklemede"
+        gonderenUid: currentUser.uid, gonderenIsim: benimIsmim, gonderenGun: bGun, gonderenSaat: bSaat,
+        aliciIsim: kMuzisyen, aliciGun: kGun, aliciSaat: kSaat, durum: "beklemede"
     }).then(() => {
-        eylemKaydet(`⏳ ${benimIsmim}, ${kMuzisyen} isimli müzisyene takas teklifi gönderdi.`);
-        alert("Takas talebiniz karşı tarafa anında iletildi ve panoya eklendi!");
-    }).catch(err => alert("Talep gönderilemedi: " + err.message));
+        eylemKaydet(`⏳ ${benimIsmim}, ${kMuzisyen}'e takas teklifi gönderdi.`);
+        alert("Takas talebiniz karşı tarafa anında iletildi!");
+    });
 }
 
 function takasIptalEt(talepKey) {
     if(!confirm("Gönderdiğiniz bu takas teklifini geri çekmek istediğinize emin misiniz?")) return;
-    db.ref(`takas_talepleri/${talepKey}`).remove().then(() => {
-        alert("Takas teklifiniz başarıyla iptal edildi.");
-    });
+    db.ref(`takas_talepleri/${talepKey}`).remove().then(() => alert("Takas teklifiniz iptal edildi."));
 }
 
 function CanliTakaslariDinle() {
@@ -361,11 +346,7 @@ function CanliTakaslariDinle() {
                         </div>
                     </div>`;
             } else {
-                let iptalButonHtml = "";
-                if (isImSender) {
-                    iptalButonHtml = `<button onclick="window.takasIptalEt('${key}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold px-2 py-1 rounded border border-rose-500/20 transition cursor-pointer ml-2">İptal Et</button>`;
-                }
-
+                let iptalButonHtml = isImSender ? `<button onclick="window.takasIptalEt('${key}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 font-bold px-2 py-1 rounded border border-rose-500/20 transition cursor-pointer ml-2">İptal Et</button>` : "";
                 alani.innerHTML += `
                     <div class="bg-[#050b18] p-3 rounded-xl border border-slate-800 text-slate-400 text-[11px] mb-2 shadow-sm flex items-center justify-between">
                         <div>
@@ -378,7 +359,6 @@ function CanliTakaslariDinle() {
                     </div>`;
             }
         });
-
         if(!talepVarmi) { alani.innerHTML = `<p class="text-slate-500 italic text-center py-4 text-xs">Aktif takas teklifi yok.</p>`; }
     });
 }
@@ -394,13 +374,9 @@ function takasOnayla(talepKey) {
         guncelleme[`takas_talepleri/${talepKey}/durum`] = "onaylandi";
 
         db.ref().update(guncelleme).then(() => {
-            eylemKaydet(`🔄 TAKAS BAŞARILI: ${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini karşılıklı takas etti.`);
-            db.ref("notlar").push({
-                uid: "sistem",
-                isim: "🔄 TAKAS BAŞARILI",
-                mesaj: `${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini karşılıklı olarak başarıyla takas etti!`
-            });
-            alert("Takas işlemi başarıyla onaylandı ve takvim güncellendi!");
+            eylemKaydet(`🔄 TAKAS BAŞARILI: ${req.gonderenIsim} ve ${req.aliciIsim} sahne takası yaptı.`);
+            db.ref("notlar").push({ uid: "sistem", isim: "🔄 TAKAS BAŞARILI", mesaj: `${req.gonderenIsim} ve ${req.aliciIsim} sahne saatlerini takas etti!` });
+            alert("Takas işlemi başarıyla onaylandı!");
         });
     });
 }
@@ -412,7 +388,7 @@ function takasReddet(talepKey) {
         
         db.ref(`takas_talepleri/${talepKey}/durum`).set("reddedildi").then(() => {
             let benimIsmim = currentUser ? getAktifIsim(currentUser) : "Bir müzisyen";
-            eylemKaydet(`❌ ${benimIsmim}, ${req.gonderenIsim} tarafından gelen takas teklifini reddetti.`);
+            eylemKaydet(`❌ ${benimIsmim}, ${req.gonderenIsim}'den gelen takası reddetti.`);
             alert("Takas teklifi reddedildi.");
         });
     });
@@ -420,15 +396,8 @@ function takasReddet(talepKey) {
 
 function ProgramiCiz(veri) {
     const baslikEl = document.getElementById("dinamik-tarih-basligi");
-    
-    // Veritabanından gelen başlığı ekrana yansıt
-    let baslikMetni = (veri && veri.tarih_basligi && veri.tarih_basligi.trim() !== "") 
-        ? veri.tarih_basligi 
-        : "MEYDAN SLOT TAKVİMİ";
-    
-    if (baslikEl) {
-        baslikEl.innerText = baslikMetni;
-    }
+    let baslikMetni = (veri && veri.tarih_basligi && veri.tarih_basligi.trim() !== "") ? veri.tarih_basligi : "MEYDAN SLOT TAKVİMİ";
+    if (baslikEl) baslikEl.innerText = baslikMetni;
 
     const programAkisi = document.getElementById("program-akisi");
     if (!programAkisi) return;
@@ -446,7 +415,6 @@ function ProgramiCiz(veri) {
         saatler.forEach(saat => {
             const isim = (aktifVeri[gun] && aktifVeri[gun][saat]) ? aktifVeri[gun][saat] : "BOŞ";
             const isBoş = isim === "BOŞ" || isim === "";
-            
             const isOwner = currentUser && !isBoş && benimSlotumMu(isim, benimIsmim);
             const isHaftaIciSabit = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"].includes(gun) && saat === "12:00-15:00";
             const isHaftaSonuIlk = ["Cuma", "Cumartesi", "Pazar"].includes(gun) && saat === "12:00-15:00";
@@ -466,9 +434,7 @@ function ProgramiCiz(veri) {
 
             if (isBoş) {
                 kartStili = "bg-amber-500/5 border border-dashed border-amber-500/30";
-                etiketHtml = currentUser 
-                    ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-1 px-2.5 rounded-lg transition cursor-pointer shadow-sm">Sahne Al</button>`
-                    : `<span class="text-[9px] text-amber-500/40 italic">Boş Slot</span>`;
+                etiketHtml = currentUser ? `<button onclick="window.sahneAl('${gun}', '${saat}')" class="text-[10px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-1 px-2.5 rounded-lg transition cursor-pointer shadow-sm">Sahne Al</button>` : `<span class="text-[9px] text-amber-500/40 italic">Boş Slot</span>`;
             } else if (isOwner) {
                 kartStili = "bg-emerald-500/10 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.07)]"; 
                 etiketHtml = `<button onclick="window.slotBiral('${gun}', '${saat}')" class="text-[9px] bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 px-2 py-1 rounded-lg border border-rose-500/20 transition cursor-pointer font-bold">İptal Et</button>`;
@@ -522,13 +488,11 @@ function PerformansPanosunuCiz() {
         return { isim: isim, slotAdet: istatistik[isim], toplamSaat: istatistik[isim] * 3 };
     }).sort((a, b) => b.slotAdet - a.slotAdet);
 
-    slotKutusu.innerHTML = "";
-    skorKutusu.innerHTML = "";
+    slotKutusu.innerHTML = ""; skorKutusu.innerHTML = "";
 
     if (siraliListe.length === 0) {
         const bosUyarisi = `<div class="text-slate-600 text-xs italic text-center pt-8">Takvimde henüz dolu slot yok.</div>`;
-        slotKutusu.innerHTML = bosUyarisi;
-        skorKutusu.innerHTML = bosUyarisi;
+        slotKutusu.innerHTML = bosUyarisi; skorKutusu.innerHTML = bosUyarisi;
         return;
     }
 
@@ -540,15 +504,12 @@ function PerformansPanosunuCiz() {
             </div>`;
 
         let dereceSimge = `<span class="w-5 text-center font-bold text-slate-500 text-[11px]">${index + 1}.</span>`;
-        if (index === 0) dereceSimge = `🏆`;
-        if (index === 1) dereceSimge = `🥈`;
-        if (index === 2) dereceSimge = `🥉`;
+        if (index === 0) dereceSimge = `🏆`; if (index === 1) dereceSimge = `🥈`; if (index === 2) dereceSimge = `🥉`;
 
         skorKutusu.innerHTML += `
             <div class="flex justify-between items-center p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs">
                 <div class="flex items-center gap-2">
-                    ${dereceSimge}
-                    <span class="font-bold text-slate-200">${müzisyen.isim}</span>
+                    ${dereceSimge} <span class="font-bold text-slate-200">${müzisyen.isim}</span>
                 </div>
                 <span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg font-black">${müzisyen.toplamSaat} Saat</span>
             </div>`;
@@ -562,10 +523,7 @@ function CanliMuzisyenleriDinle() {
         listeAlani.innerHTML = "";
         
         const muzisyenler = snapshot.val();
-        if (!muzisyenler) {
-            listeAlani.innerHTML = `<p class="text-slate-500 italic text-xs p-2">Kayıtlı müzisyen yok.</p>`;
-            return;
-        }
+        if (!muzisyenler) { listeAlani.innerHTML = `<p class="text-slate-500 italic text-xs p-2">Kayıtlı müzisyen yok.</p>`; return; }
 
         Object.keys(muzisyenler).forEach(key => {
             const m = muzisyenler[key];
@@ -573,11 +531,8 @@ function CanliMuzisyenleriDinle() {
             listeAlani.innerHTML += `
                 <div class="flex items-center gap-2 bg-[#050b18] p-2 rounded-xl border border-slate-800/60 shadow-sm">
                     <img src="${pResim}" class="w-7 h-7 rounded-full border border-slate-700" referrerpolicy="no-referrer">
-                    <div class="truncate">
-                        <span class="text-xs font-bold text-slate-200 block truncate">${m.name || 'Müzisyen'}</span>
-                    </div>
-                </div>
-            `;
+                    <div class="truncate"><span class="text-xs font-bold text-slate-200 block truncate">${m.name || 'Müzisyen'}</span></div>
+                </div>`;
         });
     });
 }
@@ -593,15 +548,10 @@ function CanliSahneVeGeriSayimMotoru() {
     const simdi = new Date();
     const gunlerIngilizce = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
     const bugunTr = gunlerIngilizce[simdi.getDay()];
-    
-    const saat = simdi.getHours();
-    const dakika = simdi.getMinutes();
-    const saniye = simdi.getSeconds();
+    const saat = simdi.getHours(); const dakika = simdi.getMinutes(); const saniye = simdi.getSeconds();
     const toplamGecenSaniye = (saat * 3600) + (dakika * 60) + saniye;
 
-    let aktifSlot = null;
-    let bitisSaati = 0;
-
+    let aktifSlot = null; let bitisSaati = 0;
     if (saat >= 12 && saat < 15) { aktifSlot = "12:00-15:00"; bitisSaati = 15; }
     else if (saat >= 15 && saat < 18) { aktifSlot = "15:00-18:00"; bitisSaati = 18; }
     else if (saat >= 18 && saat < 21) { aktifSlot = "18:00-21:00"; bitisSaati = 21; }
@@ -609,43 +559,31 @@ function CanliSahneVeGeriSayimMotoru() {
 
     if (aktifSlot && mevcutSlotlar[bugunTr] && mevcutSlotlar[bugunTr][aktifSlot]) {
         const kiminSahnep = mevcutSlotlar[bugunTr][aktifSlot];
-        
         if (kiminSahnep === "BOŞ" || kiminSahnep === "") {
-            sahneYazi.innerText = "MEYDAN BOŞ / MÜSAİT";
-            sahneYazi.className = "text-xl font-black text-emerald-400 tracking-wide";
+            sahneYazi.innerText = "MEYDAN BOŞ / MÜSAİT"; sahneYazi.className = "text-xl font-black text-emerald-400 tracking-wide";
             if(canliIsik) canliIsik.className = "w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping";
         } else {
-            sahneYazi.innerText = kiminSahnep;
-            sahneYazi.className = "text-xl font-black text-white tracking-wide";
+            sahneYazi.innerText = kiminSahnep; sahneYazi.className = "text-xl font-black text-white tracking-wide";
             if(canliIsik) canliIsik.className = "w-2.5 h-2.5 bg-red-500 rounded-full animate-ping";
         }
 
-        const toplamBitisSaniye = bitisSaati * 3600;
-        let kalanSaniye = toplamBitisSaniye - toplamGecenSaniye;
-
+        let kalanSaniye = (bitisSaati * 3600) - toplamGecenSaniye;
         const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
         const m = Math.floor((kalanSaniye % 3600) / 60).toString().padStart(2, '0');
         const s = (kalanSaniye % 60).toString().padStart(2, '0');
-
         sayacYazi.innerText = `${h}:${m}:${s}`;
         if(sayacEtiket) sayacEtiket.innerText = "Slotun Bitmesine Kalan";
     } else {
-        sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK";
-        sahneYazi.className = "text-xl font-black text-slate-500 tracking-wide";
+        sahneYazi.innerText = "MEYDANDA ŞU AN KİMSE YOK"; sahneYazi.className = "text-xl font-black text-slate-500 tracking-wide";
         if(canliIsik) canliIsik.className = "w-2.5 h-2.5 bg-slate-600 rounded-full";
 
-        let sonrakiHedef = 12 * 3600;
-        let kalanSaniye = 0;
-        if (saat >= 0 && saat < 12) {
-            kalanSaniye = sonrakiHedef - toplamGecenSaniye;
-        } else {
-            kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrakiHedef;
-        }
+        let sonrakiHedef = 12 * 3600; let kalanSaniye = 0;
+        if (saat >= 0 && saat < 12) kalanSaniye = sonrakiHedef - toplamGecenSaniye;
+        else kalanSaniye = (24 * 3600 - toplamGecenSaniye) + sonrakiHedef;
 
         const h = Math.floor(kalanSaniye / 3600).toString().padStart(2, '0');
         const m = Math.floor((kalanSaniye % 3600) / 60).toString().padStart(2, '0');
         const s = (kalanSaniye % 60).toString().padStart(2, '0');
-
         sayacYazi.innerText = `${h}:${m}:${s}`;
         if(sayacEtiket) sayacEtiket.innerText = "İlk Slotun Başlamasına Kalan";
     }
@@ -659,11 +597,7 @@ function CanliVerileriDinle() {
         if (!veriler) { pano.innerHTML = `<p class="text-slate-500 italic text-center py-4 text-xs">Henüz bildirim yok.</p>`; return; }
         Object.keys(veriler).reverse().forEach(key => {
             const item = veriler[key];
-            pano.innerHTML += `
-                <div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800 mb-2">
-                    <span class="font-bold text-orange-400 block text-[11px] mb-0.5">${item.isim}:</span>
-                    <p class="text-slate-300 text-xs">${item.mesaj}</p>
-                </div>`;
+            pano.innerHTML += `<div class="bg-[#050b18] p-2.5 rounded-xl border border-slate-800 mb-2"><span class="font-bold text-orange-400 block text-[11px] mb-0.5">${item.isim}:</span><p class="text-slate-300 text-xs">${item.mesaj}</p></div>`;
         });
     });
 }
@@ -672,11 +606,7 @@ function notEkle() {
     if (!currentUser) return;
     const mesajEl = document.getElementById("not-icerik");
     if (!mesajEl || !mesajEl.value.trim()) return;
-    db.ref("notlar").push({ 
-        uid: currentUser.uid, 
-        isim: getAktifIsim(currentUser), 
-        mesaj: mesajEl.value.trim() 
-    });
+    db.ref("notlar").push({ uid: currentUser.uid, isim: getAktifIsim(currentUser), mesaj: mesajEl.value.trim() });
     mesajEl.value = "";
 }
 
@@ -684,53 +614,28 @@ function SohbetOdasiDinle() {
     db.ref("meydan_chat").limitToLast(30).on("value", snapshot => {
         const sohbetKutusu = document.getElementById("sohbet-mesajlari");
         if (!sohbetKutusu) return;
-        
         sohbetKutusu.innerHTML = "";
         const veriler = snapshot.val();
-        
-        if (!veriler) {
-            sohbetKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center pt-8">Henüz mesaj yok. İlk mesajı sen yaz!</div>`;
-            return;
-        }
+        if (!veriler) { sohbetKutusu.innerHTML = `<div class="text-slate-600 text-xs italic text-center pt-8">Henüz mesaj yok. İlk mesajı sen yaz!</div>`; return; }
 
         Object.keys(veriler).forEach(key => {
             const m = veriler[key];
             const isMe = currentUser && m.isim === getAktifIsim(currentUser);
-            
-            sohbetKutusu.innerHTML += `
-                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                    <span class="text-[10px] text-slate-500 font-bold mb-0.5 px-1">${m.isim}</span>
-                    <div class="max-w-[85%] px-3 py-2 rounded-2xl text-xs ${isMe ? 'bg-rose-600/20 border border-rose-500/30 text-rose-200 rounded-tr-none' : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'}">
-                        ${m.mesaj}
-                    </div>
-                </div>`;
+            sohbetKutusu.innerHTML += `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}"><span class="text-[10px] text-slate-500 font-bold mb-0.5 px-1">${m.isim}</span><div class="max-w-[85%] px-3 py-2 rounded-2xl text-xs ${isMe ? 'bg-rose-600/20 border border-rose-500/30 text-rose-200 rounded-tr-none' : 'bg-slate-900 border border-slate-800 text-slate-300 rounded-tl-none'}">${m.mesaj}</div></div>`;
         });
-        
         sohbetKutusu.scrollTop = sohbetKutusu.scrollHeight;
     });
 }
 
 function MeydanaMesajGonder() {
-    if (!currentUser) {
-        alert("Mesaj yazmak için giriş yapmalısın Osman!");
-        return;
-    }
+    if (!currentUser) { alert("Mesaj yazmak için giriş yapmalısın Osman!"); return; }
     const girdi = document.getElementById("sohbet-girdi");
     if (!girdi || girdi.value.trim() === "") return;
-
-    const yeniMesaj = {
-        isim: getAktifIsim(currentUser),
-        mesaj: girdi.value.trim(),
-        tarih: Date.now()
-    };
-
-    db.ref("meydan_chat").push(yeniMesaj);
-    girdi.value = ""; // Kutuyu temizle
+    db.ref("meydan_chat").push({ isim: getAktifIsim(currentUser), mesaj: girdi.value.trim(), tarih: Date.now() });
+    girdi.value = ""; 
 }
 
-document.getElementById("sohbet-girdi")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") MeydanaMesajGonder();
-});
+document.getElementById("sohbet-girdi")?.addEventListener("keypress", (e) => { if (e.key === "Enter") MeydanaMesajGonder(); });
 
 async function HavaDurumuGetir() {
     try {
@@ -738,9 +643,7 @@ async function HavaDurumuGetir() {
         if (res.ok) {
             const data = await res.json();
             const havadurumuEl = document.getElementById("havadurumu-derece");
-            if (havadurumuEl) {
-                havadurumuEl.innerText = `Beşiktaş: ${Math.round(data.current_weather.temperature)}°C`;
-            }
+            if (havadurumuEl) havadurumuEl.innerText = `Beşiktaş: ${Math.round(data.current_weather.temperature)}°C`;
         }
     } catch (e) {}
 }
@@ -752,19 +655,11 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         window.currentUser = user; 
         const benimIsmim = getAktifIsim(user);
-
         const onlineRef = db.ref("sistemde_aktif_olanlar/" + user.uid);
-        onlineRef.set({
-            isim: benimIsmim,
-            girisTarihi: Date.now()
-        });
-
+        onlineRef.set({ isim: benimIsmim, girisTarihi: Date.now() });
         onlineRef.onDisconnect().remove();
-
     } else {
-        if (window.currentUser) {
-            db.ref("sistemde_aktif_olanlar/" + window.currentUser.uid).remove();
-        }
+        if (window.currentUser) db.ref("sistemde_aktif_olanlar/" + window.currentUser.uid).remove();
         window.currentUser = null;
     }
 });
@@ -774,7 +669,6 @@ function AktifMuzisyenleriDinle() {
         const listeKutusu = document.getElementById("aktif-muzisyenler-listesi");
         const rozet = document.getElementById("aktif-sayisi-rozet");
         if (!listeKutusu) return;
-
         listeKutusu.innerHTML = "";
         const veriler = snapshot.val();
 
@@ -785,22 +679,10 @@ function AktifMuzisyenleriDinle() {
         }
 
         const aktifKullanicilar = Object.values(veriler);
-        
         if (rozet) rozet.innerText = `${aktifKullanicilar.length} Aktif`;
 
         aktifKullanicilar.forEach(kullanici => {
-            listeKutusu.innerHTML += `
-                <div class="flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs transition hover:border-cyan-500/30">
-                    <div class="flex items-center gap-2.5">
-                        <span class="relative flex h-2 w-2">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        <span class="font-bold text-slate-300">${kullanici.isim}</span>
-                    </div>
-                    <span class="text-[9px] text-slate-500 font-medium">Sistemde</span>
-                </div>
-            `;
+            listeKutusu.innerHTML += `<div class="flex items-center justify-between p-2.5 bg-slate-900/50 border border-slate-800/80 rounded-xl text-xs transition hover:border-cyan-500/30"><div class="flex items-center gap-2.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="font-bold text-slate-300">${kullanici.isim}</span></div><span class="text-[9px] text-slate-500 font-medium">Sistemde</span></div>`;
         });
     });
 }
@@ -809,7 +691,6 @@ function MeydanEylemleriniDinle() {
     db.ref("meydan_eylemleri").limitToLast(20).on("value", (snapshot) => {
         const logKutusu = document.getElementById("meydan-eylemleri-log");
         if (!logKutusu) return;
-
         logKutusu.innerHTML = "";
         const veriler = snapshot.val();
 
@@ -820,13 +701,7 @@ function MeydanEylemleriniDinle() {
 
         Object.values(veriler).reverse().forEach(eylem => {
             const saat = new Date(eylem.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            
-            logKutusu.innerHTML += `
-                <div class="p-2 bg-slate-900/40 border border-slate-800/60 rounded-xl flex gap-2 items-start mb-2">
-                    <span class="text-slate-500 font-mono text-[10px] pt-0.5">${saat}</span>
-                    <span class="text-slate-300 text-xs">${eylem.metin}</span>
-                </div>
-            `;
+            logKutusu.innerHTML += `<div class="p-2 bg-slate-900/40 border border-slate-800/60 rounded-xl flex gap-2 items-start mb-2"><span class="text-slate-500 font-mono text-[10px] pt-0.5">${saat}</span><span class="text-slate-300 text-xs">${eylem.metin}</span></div>`;
         });
     });
 }
