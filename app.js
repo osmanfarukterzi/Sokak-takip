@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.googleGirisYap = function() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); };
     window.cikisYap = function() { auth.signOut(); };
-    window.sahneAl = sahneAl;
+    window.sahneAl = sahneAl; // BU KISIM DÜZELTİLDİ
     window.slotBiral = slotBiral;
     window.takasPenceresiAc = takasPenceresiAc;
     window.takasTalebiGonder = takasTalebiGonder;
@@ -161,8 +161,7 @@ function haftayiSifirla() {
         // Kural 1 ve 2: Hafta içi
         const haftaIci = ["Pazartesi", "Salı", "Çarşamba", "Perşembe"];
         haftaIci.forEach(gun => {
-            // 12:00-15:00 Sabit kalıyor (yeniKadro'da deep copy yapıldığı için aynı kalır)
-            // Diğerleri kendi içinde dönüyor
+            // 12:00-15:00 Sabit kalıyor
             yeniKadro[gun]["18:00-21:00"] = eskiKadro[gun]["15:00-18:00"];
             yeniKadro[gun]["21:00-24:00"] = eskiKadro[gun]["18:00-21:00"];
             yeniKadro[gun]["15:00-18:00"] = eskiKadro[gun]["21:00-24:00"];
@@ -182,15 +181,14 @@ function haftayiSifirla() {
 
         for(let i = 0; i < zincir.length; i++) {
             let suanki = zincir[i];
-            let sonraki = zincir[(i + 1) % zincir.length]; // En sonuncusu 0. indexe döner
+            let sonraki = zincir[(i + 1) % zincir.length]; // En sonuncusu başa döner
             yeniKadro[sonraki.g][sonraki.s] = eskiKadro[suanki.g][suanki.s];
         }
 
-        // Güncellenmiş kadroyu kaydet
         let guncellemeler = {};
         guncellemeler["sabit_ana_kadro"] = yeniKadro;
         guncellemeler["haftalik_slotlar"] = yeniKadro;
-        guncellemeler["takas_talepleri"] = null; // Eski haftanın bekleyen taleplerini temizle
+        guncellemeler["takas_talepleri"] = null; // Eski talepleri temizle
 
         db.ref().update(guncellemeler).then(() => {
             eylemKaydet(`👑 SİSTEM YÖNETİCİSİ (Sirayet): ${yeniBaslik} haftası başlatıldı. Ana kadro rotasyonu başarıyla uygulandı.`);
@@ -203,7 +201,6 @@ function VeritabaniniKontrolEtVeDinle() {
     db.ref("haftalik_slotlar").on("value", snapshot => {
         let veriler = snapshot.val();
         
-        // Eğer veritabanı boşsa (ilk kurulumda) varsayılanı yükle ve sabit_ana_kadro oluştur
         if (!veriler || Object.keys(veriler).length === 0) {
             let baslangic = JSON.parse(JSON.stringify(varsayilanProgram));
             db.ref("haftalik_slotlar").set(baslangic);
@@ -219,7 +216,8 @@ function VeritabaniniKontrolEtVeDinle() {
     });
 }
 
-window.sahneAl = function(gun, saat) {
+// BU FONKSİYON DÜZELTİLDİ
+function sahneAl(gun, saat) {
     if (!currentUser) { alert("Slot alabilmek için önce giriş yapmalısın!"); return; }
     
     const benimIsmim = getAktifIsim(currentUser);
@@ -242,7 +240,7 @@ window.sahneAl = function(gun, saat) {
     db.ref(`haftalik_slotlar/${gun}/${saat}`).set(benimIsmim).then(() => {
         eylemKaydet(`✅ ${benimIsmim}, ${gun} ${saat} slotunu rezerve etti.`);
     }).catch((error) => console.error("Slot alınırken hata:", error));
-};
+}
 
 function slotBiral(gun, saat) {
     if (!currentUser) return;
@@ -273,7 +271,7 @@ function takasPenceresiAc(karsiGun, karsiSaat, karsiMuzisyen) {
     });
 
     if(benimSlotlarim.length === 0) { 
-        alert(`Şu anda takvimde senin adına (${benimIsmim}) ait aktif bir slot bulamadık.`); 
+        alert(`Şu anda takvimde senin adına (${benimIsmim}) ait aktif bir slot bulamadık. Önce boş bir slot almalısın.`); 
         return; 
     }
     
