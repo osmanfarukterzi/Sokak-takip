@@ -8,7 +8,6 @@ const firebaseConfig = {
     appId: "1:114446148281:web:b4bd9a18c77a762cde3168"
 };
 
-// Firebase Başlatma
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
