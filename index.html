@@ -16,6 +16,28 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; border: 3px solid #020617; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
+    </style>
+    
+    <!-- PWA Uygulama Ayarları -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050b18">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Meydan">
+
+    <!-- Service Worker Kayıt Kodu -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Uygulama motoru başarıyla başlatıldı.', reg))
+            .catch(err => console.log('Motor başlatılamadı:', err));
+        });
+      }
+    </script>
+
+</head>
+<body class="min-h-full bg-[#030712] ...
 </head>
 <body class="min-h-full bg-[#030712] antialiased flex flex-col selection:bg-orange-500/30 selection:text-orange-200">
 
