@@ -93,7 +93,7 @@ export function slotTuru(gun, saat) {
   return 'dongu';
 }
 
-export const TUR_ETIKET = { sabit: 'Sabit', haftaSonuOgle: 'Hafta sonu öğlen', dongu: 'Döngü' };
+export const TUR_ETIKET = { sabit: 'Sabit', haftaSonuOgle: 'Hafta sonu', dongu: 'Döngü' };
 
 // ---- Zaman ----
 

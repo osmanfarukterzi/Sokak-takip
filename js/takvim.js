@@ -55,12 +55,12 @@ function slotSinifi(s) {
     s.benim && !s.gecmis ? 'benim' : ''].filter(Boolean).join(' ');
 }
 
-function SlotKutusu({ s, ac }) {
+function SlotKutusu({ s, ac, kisa }) {
   const yagmur = s.yagis != null && s.yagis >= 50 && !s.gecmis;
   return html`<button class=${slotSinifi(s)} onClick=${() => ac(s.anahtar)}
       aria-label=${`${GUNLER[s.gun]} ${s.saatAd}: ${s.bos ? 'boş slot' : s.sahip}`}>
     <span class="slot-ust">
-      <span class="saat">${s.saatAd}</span>
+      <span class="saat">${kisa ? s.saatKisa : s.saatAd}</span>
       <span class="slot-isaretler">
         ${yagmur && html`<span class="yagmur" title=${`Yağış ihtimali %${s.yagis}`}><${Ikon} ad="damla" boyut=${13} />%${s.yagis}</span>`}
         ${s.kilitli && html`<span class="soluk" title="Sabit slot"><${Ikon} ad="kilit" boyut=${13} /></span>`}
@@ -88,7 +88,7 @@ export function HaftaTakvimi({ model, ac }) {
           <span class="gun-ad">${g.ad}</span>
           <span class="gun-tarih">${g.bugun ? 'Bugün' : g.tarih}</span>
         </div>
-        ${g.slotlar.map((s) => html`<${SlotKutusu} s=${s} ac=${ac} />`)}
+        ${g.slotlar.map((s) => html`<${SlotKutusu} s=${s} ac=${ac} kisa=${true} />`)}
       </div>`)}
     </div>
   </div>`;
