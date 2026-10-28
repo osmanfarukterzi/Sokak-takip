@@ -32,7 +32,7 @@
         "zaman"
       ],
       "$id": {
-        ".write": "((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid) || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')",
+        ".write": "((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid) || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com') || ((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && data.exists() && data.child('uid').val() == auth.uid && data.child('tip').val() == 'mesaj' && (!newData.exists() || (newData.child('uid').val() == auth.uid && newData.child('tip').val() == 'mesaj' && newData.child('zaman').val() == data.child('zaman').val())))",
         ".validate": "newData.hasChildren(['zaman', 'tip', 'uid']) && (!newData.child('metin').exists() || (newData.child('metin').isString() && newData.child('metin').val().length <= 1000))"
       }
     },

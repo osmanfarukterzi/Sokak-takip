@@ -253,7 +253,15 @@ input::placeholder, textarea::placeholder { color: var(--soluk2); }
 .mesaj.benim .mesaj-kim { color: var(--soluk); }
 .balon { background: var(--yuzey2); border-radius: 4px 14px 14px 14px; padding: 9px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 8px; overflow-wrap: anywhere; }
 .mesaj.benim .balon { background: #4A3512; color: #FFF0D6; border-radius: 14px 4px 14px 14px; }
-.sistem-mesaj { align-self: center; text-align: center; font-size: 12px; color: var(--soluk); background: var(--yuzey3); border-radius: 12px; padding: 5px 12px; max-width: 92%; }
+.mesaj-islem { display: flex; gap: 12px; padding: 0 4px; }
+.metin-btn { border: 0; background: none; padding: 6px 0; font-size: 12px; font-weight: 700; color: var(--soluk); min-height: 28px; }
+.metin-btn:hover { color: var(--metin); text-decoration: underline; }
+.tehlike-yazi { color: var(--kirmizi); }
+.duzenlendi { font-size: 11px; color: var(--soluk2); font-style: italic; }
+.mesaj.benim .duzenlendi { color: #D9C29A; }
+.duzenle-form { display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
+.duzenle-form textarea { min-height: 60px; font-size: 14px; }
+.sistem-mesaj {align-self: center; text-align: center; font-size: 12px; color: var(--soluk); background: var(--yuzey3); border-radius: 12px; padding: 5px 12px; max-width: 92%; }
 .sistem-mesaj span { margin-left: 6px; color: var(--soluk2); }
 .sohbet-slot { background: var(--yuzey3); border: 1.5px dashed var(--amber); border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--metin); }
 .sohbet-slot > div { display: flex; flex-direction: column; }

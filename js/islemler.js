@@ -238,6 +238,14 @@ export async function mesajGonder(ben, metin) {
   await yaz(`sohbet/${id}`, { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, foto: ben.foto || '', tip: 'mesaj', metin: m, zaman: SUNUCU_ZAMANI() });
 }
 
+export async function mesajDuzenle(id, metin) {
+  const m = metin.trim().slice(0, 1000);
+  if (!m) throw new Error('Mesaj boş olamaz.');
+  await toplu({ [`sohbet/${id}/metin`]: m, [`sohbet/${id}/duzenlendi`]: SUNUCU_ZAMANI() });
+}
+
+export const mesajSil = (id) => sil(`sohbet/${id}`);
+
 export async function geribildirimGonder(ben, metin) {
   const m = metin.trim().slice(0, 2000);
   if (!m) return;

@@ -3,7 +3,8 @@ import { html, useState, useEffect, useRef } from './ortak.js';
 import { Ikon, zamanOnce, basHarfler } from './ortak.js';
 import { GUN_KISA, SAAT_KISA, slotCoz, haftaBasligi, saatYaz } from './rotasyon.js';
 import {
-  takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari, oncelikDurumu
+  takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari, oncelikDurumu,
+  mesajDuzenle, mesajSil
 } from './islemler.js';
 
 const kisaSlot = (k) => {
@@ -125,6 +126,20 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
     }
   };
 
+  const [duzen, setDuzen] = useState(null); // { id, metin }
+  const kaydet = async () => {
+    try {
+      await mesajDuzenle(duzen.id, duzen.metin);
+      setDuzen(null);
+    } catch (e) {
+      bildir(e.message || 'Mesaj düzenlenemedi.', true);
+    }
+  };
+  const sil = async (id, benim) => {
+    if (!confirm(benim ? 'Mesajın silinsin mi?' : 'Bu mesaj admin olarak silinsin mi?')) return;
+    try { await mesajSil(id); } catch (e) { bildir('Mesaj silinemedi.', true); }
+  };
+
   const bosKarti = (m) => {
     const veri = haftaVeri[m.hafta];
     const slotlar = veri ? haftaSlotlari(m.hafta, veri) : null;
@@ -165,8 +180,23 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
               <div class="sohbet-slot"><div><span class="soluk kucuk">Takas teklifi → ${t.alan}</span>
               <strong>${kisaSlot(t.verilen)} ↔ ${kisaSlot(t.istenen)}</strong></div>
               <span class=${'durum-yazi ' + t.durum}>${{ bekliyor: 'Bekliyor', kabul: 'Kabul', red: 'Red', iptal: 'İptal' }[t.durum]}</span></div>`}
-            ${m.tip === 'mesaj' && m.metin}
+            ${m.tip === 'mesaj' && (duzen && duzen.id === id
+              ? html`<form class="duzenle-form" onSubmit=${(e) => { e.preventDefault(); kaydet(); }}>
+                  <label class="gizli" for=${'duzen-' + id}>Mesajı düzenle</label>
+                  <textarea id=${'duzen-' + id} rows="2" maxlength="1000" value=${duzen.metin}
+                    onInput=${(e) => setDuzen({ id, metin: e.target.value })}
+                    onKeyDown=${(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); kaydet(); } if (e.key === 'Escape') setDuzen(null); }}></textarea>
+                  <span class="satir">
+                    <button type="button" class="btn kucuk-btn" onClick=${() => setDuzen(null)}>Vazgeç</button>
+                    <button class="btn birincil kucuk-btn" disabled=${!duzen.metin.trim()}>Kaydet</button>
+                  </span>
+                </form>`
+              : html`<span>${m.metin}${m.duzenlendi ? html` <span class="duzenlendi">(düzenlendi)</span>` : ''}</span>`)}
           </div>
+          ${m.tip === 'mesaj' && (benim || ben.admin) && !(duzen && duzen.id === id) && html`<span class="mesaj-islem">
+            ${benim && html`<button class="metin-btn" onClick=${() => setDuzen({ id, metin: m.metin || '' })}>Düzenle</button>`}
+            <button class="metin-btn tehlike-yazi" onClick=${() => sil(id, benim)}>Sil</button>
+          </span>`}
           </div>
         </div>`;
       })}

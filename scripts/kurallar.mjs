@@ -57,7 +57,10 @@ const kurallar = {
       '.read': UYE_MI,
       '.indexOn': ['zaman'],
       $id: {
-        ...sadeceEkleme(),
+        // Yeni mesaj; ya da kişinin kendi düz mesajını düzenlemesi/silmesi; admin her şeyi.
+        '.write': `(${UYE_MI} && !data.exists() && newData.child('uid').val() == auth.uid) || ${ADMIN}`
+          + ` || (${UYE_MI} && data.exists() && data.child('uid').val() == auth.uid && data.child('tip').val() == 'mesaj'`
+          + ` && (!newData.exists() || (newData.child('uid').val() == auth.uid && newData.child('tip').val() == 'mesaj' && ${ayni('zaman')})))`,
         '.validate': "newData.hasChildren(['zaman', 'tip', 'uid']) && (!newData.child('metin').exists() || (newData.child('metin').isString() && newData.child('metin').val().length <= 1000))"
       }
     },
