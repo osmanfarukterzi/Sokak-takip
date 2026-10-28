@@ -56,13 +56,14 @@ function slotSinifi(s) {
 }
 
 function SlotKutusu({ s, ac, kisa }) {
-  const yagmur = s.yagis != null && s.yagis >= 50 && !s.gecmis;
+  const yagmur = s.yagis != null && s.yagis >= 30 && !s.gecmis;
+  const yagmurSinif = s.yagis >= 50 ? 'yagmur' : 'yagmur hafif';
   return html`<button class=${slotSinifi(s)} onClick=${() => ac(s.anahtar)}
       aria-label=${`${GUNLER[s.gun]} ${s.saatAd}: ${s.bos ? 'boş slot' : s.sahip}`}>
     <span class="slot-ust">
       <span class="saat">${kisa ? s.saatKisa : s.saatAd}</span>
       <span class="slot-isaretler">
-        ${yagmur && html`<span class="yagmur" title=${`Yağış ihtimali %${s.yagis}`}><${Ikon} ad="damla" boyut=${13} />%${s.yagis}</span>`}
+        ${yagmur && html`<span class=${yagmurSinif} title=${`Yağış ihtimali %${s.yagis}`}><${Ikon} ad="damla" boyut=${13} />%${s.yagis}</span>`}
         ${s.kilitli && html`<span class="soluk" title="Sabit slot"><${Ikon} ad="kilit" boyut=${13} /></span>`}
         ${s.simdi && html`<span class="canli-nokta" title="Şu an"></span>`}
       </span>

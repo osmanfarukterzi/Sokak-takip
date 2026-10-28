@@ -1,6 +1,6 @@
 // Akıllı takas paneli ve sohbet.
 import { html, useState, useEffect, useRef } from './ortak.js';
-import { Ikon, zamanOnce } from './ortak.js';
+import { Ikon, zamanOnce, basHarfler } from './ortak.js';
 import { GUN_KISA, SAAT_KISA, slotCoz, haftaBasligi, saatYaz } from './rotasyon.js';
 import {
   takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari, oncelikDurumu
@@ -152,8 +152,13 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
         }
         const benim = m.uid === ben.uid;
         const t = m.tip === 'takas' ? (takaslar || {})[m.takas] : null;
-        return html`<div class=${'mesaj' + (benim ? ' benim' : '')} key=${id}>
-          <span class="mesaj-kim">${benim ? 'Sen' : m.sahip}${!benim && m.ad && m.ad !== m.sahip ? html` <span class="soluk">· ${m.ad}</span>` : ''} <span class="soluk">${saatYaz(m.zaman || simdi)}</span></span>
+        const ad = m.ad || m.sahip;
+        return html`<div class=${'mesaj-satir' + (benim ? ' benim' : '')} key=${id}>
+          ${!benim && (m.foto
+            ? html`<img class="mesaj-foto" src=${m.foto} alt="" referrerpolicy="no-referrer" />`
+            : html`<span class="mesaj-foto harf">${basHarfler(ad)}</span>`)}
+          <div class=${'mesaj' + (benim ? ' benim' : '')}>
+          <span class="mesaj-kim">${benim ? 'Sen' : html`<strong>${ad}</strong>${m.sahip && m.sahip !== ad ? html` <span class="sahip-cip">${m.sahip}</span>` : ''}`} <span class="soluk">${saatYaz(m.zaman || simdi)}</span></span>
           <div class="balon">
             ${m.tip === 'bos' && html`<span>${m.metin || `${m.sahip} bu slota çıkamıyor.`}</span>${bosKarti(m)}`}
             ${m.tip === 'takas' && t && html`<span>${m.metin || 'Takas teklifi'}</span>
@@ -161,6 +166,7 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
               <strong>${kisaSlot(t.verilen)} ↔ ${kisaSlot(t.istenen)}</strong></div>
               <span class=${'durum-yazi ' + t.durum}>${{ bekliyor: 'Bekliyor', kabul: 'Kabul', red: 'Red', iptal: 'İptal' }[t.durum]}</span></div>`}
             ${m.tip === 'mesaj' && m.metin}
+          </div>
           </div>
         </div>`;
       })}

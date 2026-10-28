@@ -249,7 +249,7 @@ function Ana({ ben }) {
               <span><${Ikon} ad="kilit" boyut=${14} /> Sabit</span>
               <span><span class="sen-etiket">SEN</span> Senin slotun</span>
               <span><span class="kesikli"></span> Boş, alınabilir</span>
-              <span class="yagmur"><${Ikon} ad="damla" boyut=${14} /> Yağmur ihtimali</span>
+              <span class="yagmur"><${Ikon} ad="damla" boyut=${14} /> Yağmur ihtimali (%30+)</span>
             </div>
           </div>
           <div class="masaustu-takvim"><${HaftaTakvimi} model=${secModel} ac=${(k) => slotAc(secHafta, k)} /></div>

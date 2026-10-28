@@ -92,7 +92,7 @@ function kayitVeSohbet(ben, degisiklik, metin, sohbetEk) {
   degisiklik[`kayit/${kayitId}`] = { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, metin, zaman: SUNUCU_ZAMANI() };
   if (sohbetEk) {
     const id = yeniAnahtar('sohbet');
-    degisiklik[`sohbet/${id}`] = { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, zaman: SUNUCU_ZAMANI(), ...sohbetEk };
+    degisiklik[`sohbet/${id}`] = { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, foto: ben.foto || '', zaman: SUNUCU_ZAMANI(), ...sohbetEk };
   }
 }
 
@@ -235,7 +235,7 @@ export async function mesajGonder(ben, metin) {
   const m = metin.trim().slice(0, 1000);
   if (!m) return;
   const id = yeniAnahtar('sohbet');
-  await yaz(`sohbet/${id}`, { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, tip: 'mesaj', metin: m, zaman: SUNUCU_ZAMANI() });
+  await yaz(`sohbet/${id}`, { uid: ben.uid, ad: ben.ad, sahip: ben.sahip, foto: ben.foto || '', tip: 'mesaj', metin: m, zaman: SUNUCU_ZAMANI() });
 }
 
 export async function geribildirimGonder(ben, metin) {
