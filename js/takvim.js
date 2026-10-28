@@ -8,7 +8,7 @@ import {
 import { slotYagis, kodAciklama } from './hava.js';
 import {
   haftaSlotlari, alimEngeli, cikisEngeli, slotAdi, slotuBirak, slotuAl, takasTeklifEt, cikisYapildi,
-  kalanAlimHakki, adminSlotAta
+  kalanAlimHakki, adminSlotAta, oncelikDurumu, asilSlotSayilari, VARSAYILAN_AYARLAR
 } from './islemler.js';
 
 /** Bir haftanın ekranda gösterilecek slot listesi. */
@@ -197,7 +197,8 @@ export function SlotPenceresi({ haftaId, anahtar, veri, model, ben, ayarlar, sim
   };
 
   const asil = haftaProgrami(haftaId)[anahtar];
-  const alimEng = s.bos ? alimEngeli({ ben, haftaId, anahtar, slotlar, alimlar, ayarlar }) : null;
+  const alimEng = s.bos ? alimEngeli({ ben, haftaId, anahtar, slotlar, alimlar, ayarlar, simdi }) : null;
+  const oncelik = s.bos ? oncelikDurumu({ haftaId, anahtar, slotlar, alimlar, ayarlar, simdi }) : null;
   const cikisEng = s.benim ? cikisEngeli(ben, haftaId, anahtar, slotlar, cikislar, ayarlar, simdi) : 'x';
   const benimSlotlarim = model.flatMap((g) => g.slotlar).filter((x) => x.benim && !x.gecmis && x.anahtar !== anahtar);
   const baskaSlotlar = model.flatMap((g) => g.slotlar).filter((x) => !x.benim && !x.bos && !x.gecmis);
@@ -220,7 +221,7 @@ export function SlotPenceresi({ haftaId, anahtar, veri, model, ben, ayarlar, sim
           <${Ikon} ad="muzik" /> Meydana çıktım</button>`}
         ${s.bos && !s.gecmis && html`<button class="btn birincil" disabled=${mesgul || !!alimEng}
           onClick=${() => yap(() => slotuAl(ben, haftaId, anahtar, ayarlar), 'Slot senin oldu.')}>Slotu al</button>
-          <p class=${alimEng ? 'uyari-yazi' : 'soluk'}>${alimEng || `Bu hafta ${kalanAlimHakki(ben, alimlar, ayarlar)} alım hakkın kaldı.`}</p>`}
+          <p class=${alimEng ? 'uyari-yazi' : 'soluk'}>${alimEng || `${oncelik ? `Öncelik sende; ${saatYaz(oncelik.bitis)}'den sonra herkese açılacak. ` : ''}Bu hafta ${kalanAlimHakki(ben, alimlar, ayarlar)} alım hakkın kaldı.`}</p>`}
         ${s.benim && !s.gecmis && !s.cikti && html`
           <button class="btn" onClick=${() => setMod('takas')} disabled=${baskaSlotlar.length === 0}><${Ikon} ad="takas" /> Takas teklif et</button>
           <button class="btn tehlike" onClick=${() => setMod('birak')}>Bu slota çıkamıyorum</button>`}
@@ -257,8 +258,8 @@ export function SlotPenceresi({ haftaId, anahtar, veri, model, ben, ayarlar, sim
           <button class="btn" onClick=${() => setMod(null)}>Vazgeç</button>
           <button class="btn birincil" disabled=${mesgul || !hedef}
             onClick=${() => yap(() => (s.benim
-              ? takasTeklifEt(ben, haftaId, anahtar, hedef, not)
-              : takasTeklifEt(ben, haftaId, hedef, anahtar, not)), 'Teklif gönderildi. Karşı taraf onaylayınca takvim değişecek.')}>Teklif gönder</button>
+              ? takasTeklifEt(ben, haftaId, anahtar, hedef, not, ayarlar)
+              : takasTeklifEt(ben, haftaId, hedef, anahtar, not, ayarlar)),'Teklif gönderildi. Karşı taraf onaylayınca takvim değişecek.')}>Teklif gönder</button>
         </div>
       </div>`}
 
@@ -275,6 +276,37 @@ export function SlotPenceresi({ haftaId, anahtar, veri, model, ben, ayarlar, sim
       </details>`}
     </div>
   </${Pencere}>`;
+}
+
+/** Kimin kaç asıl slotu var, bu hafta kaç aldı, kaç hakkı kaldı, kim öncelikli. */
+export function SlotHaklari({ haftaId, veri, ayarlar }) {
+  const a = { ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) };
+  const asil = asilSlotSayilari(haftaId);
+  const alimlar = (veri && veri.alimlar) || {};
+  const satirlar = SAHIPLER.map((ad) => {
+    const aldi = Object.keys(alimlar[ad] || {}).length;
+    return { ad, asil: asil[ad] || 0, aldi, kalan: Math.max(0, a.maxAlim - aldi), oncelikli: (asil[ad] || 0) < a.oncelikEsik };
+  }).sort((x, y) => (y.oncelikli - x.oncelikli) || (x.asil - y.asil) || x.ad.localeCompare(y.ad, 'tr'));
+  return html`<section class="kart" aria-label="Slot hakları">
+    <div class="kart-baslik">
+      <h2>Slot hakları</h2>
+      <span class="soluk kucuk">Haftada ${a.oncelikEsik}'ten az asıl slotu olan öncelikli · herkes en fazla ${a.maxAlim} boş slot alır</span>
+    </div>
+    <div class="hak-izgara">
+      ${satirlar.map((r) => html`<div class=${'hak-satir' + (r.oncelikli ? ' oncelikli' : '')}>
+        <div class="hak-ust">
+          <strong>${r.ad}</strong>
+          ${r.oncelikli && html`<span class="oncelik-etiket">ÖNCELİKLİ</span>`}
+        </div>
+        <div class="hak-sayilar">
+          <span><b>${r.asil}</b> asıl slot</span>
+          <span><b>${r.aldi}</b> aldı</span>
+          <span><b>${r.kalan}</b> hak kaldı</span>
+        </div>
+        <div class="soluk kucuk">Bu hafta en fazla ${r.asil + a.maxAlim} slot çıkabilir</div>
+      </div>`)}
+    </div>
+  </section>`;
 }
 
 /** Bu hafta kim kaç slot planlı, kaçına çıktı. */

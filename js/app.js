@@ -13,17 +13,22 @@ import {
 } from './islemler.js';
 import { havaGetir } from './hava.js';
 import {
-  haftaModeli, HaftaTakvimi, GunGorunumu, SimdiKarti, SlotPenceresi, HaftaTablosu, HavaRozeti
+  haftaModeli, HaftaTakvimi, GunGorunumu, SimdiKarti, SlotPenceresi, HaftaTablosu, HavaRozeti, SlotHaklari
 } from './takvim.js';
 import { TakasPaneli, Sohbet } from './takas.js';
 import { AdminPenceresi } from './admin.js';
 
-const VARSAYILAN_KURALLAR = [
-  'Bir kişi haftada en fazla 2 boş slot alabilir.',
-  'Aynı gün en fazla bir slot, yani 3 saat çıkılır.',
-  'Yer değiştirmeden önce ilgili kişiye sorulur; takas karşı taraf onaylayınca geçerli olur.',
-  'Meydana varınca "Çıktım" butonuna basılır.'
-];
+function varsayilanKurallar(ayarlar) {
+  const a = { ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) };
+  const k = [`Bir kişi haftada en fazla ${a.maxAlim} boş slot alabilir.`];
+  if (a.gundeTekSlot) k.push('Aynı gün en fazla bir slot çıkılır.');
+  if (a.oncelikSaat) {
+    k.push(`Slotu az olanlar (haftada ${a.oncelikEsik}'ten az asıl slotu olanlar) önceliklidir: boşalan slotu ilk ${a.oncelikSaat} saat sadece onlar alabilir, almazlarsa herkese açılır.`);
+  }
+  k.push('Yer değiştirmeden önce ilgili kişiye sorulur; takas karşı taraf onaylayınca geçerli olur.');
+  k.push('Meydana varınca "Çıktım" butonuna basılır.');
+  return k;
+}
 
 // ---------------------------------------------------------------- Kök
 
@@ -189,7 +194,7 @@ function Ana({ ben }) {
   const gelenTeklif = Object.values(takaslar || {}).filter((t) => t.durum === 'bekliyor' && t.alan === ben.sahip).length;
   const talepSayisi = Object.keys(talepler || {}).length;
   const kurallar = ((ayarlar && ayarlar.kuralMetni) || '').split('\n').map((s) => s.trim()).filter(Boolean);
-  const kuralListesi = kurallar.length ? kurallar : VARSAYILAN_KURALLAR.map((k) => k.replace('en fazla 2', `en fazla ${(ayarlar && ayarlar.maxAlim) ?? VARSAYILAN_AYARLAR.maxAlim}`));
+  const kuralListesi = kurallar.length ? kurallar : varsayilanKurallar(ayarlar);
 
   const cikis = async (anahtar) => {
     try { await cikisYapildi(ben, buHaftaId, anahtar); bildir('Kolay gelsin! Çıkışın kaydedildi.'); } catch (e) { bildir(e.message, true); }
@@ -251,6 +256,7 @@ function Ana({ ben }) {
           <div class="telefon-takvim"><${GunGorunumu} model=${secModel} ac=${(k) => slotAc(secHafta, k)} gun=${gun} gunSec=${setGun} /></div>
         </section>
         <div class="bolum b-ben"><${HaftaTablosu} model=${secModel} /></div>
+        <div class="bolum b-ben"><${SlotHaklari} haftaId=${secHafta} veri=${secVeri} ayarlar=${ayarlar} /></div>
       </div>
 
       <aside class="yan-sutun">

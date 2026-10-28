@@ -3,7 +3,7 @@ import { html, useState, useEffect, useRef } from './ortak.js';
 import { Ikon, zamanOnce } from './ortak.js';
 import { GUN_KISA, SAAT_KISA, slotCoz, haftaBasligi, saatYaz } from './rotasyon.js';
 import {
-  takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari
+  takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari, oncelikDurumu
 } from './islemler.js';
 
 const kisaSlot = (k) => {
@@ -68,12 +68,16 @@ export function TakasPaneli({ takaslar, ben, bosSlotlar, haftaVeri, ayarlar, bil
 
     ${bosSlotlar.map((b) => {
       const veri = haftaVeri[b.haftaId];
-      const engel = alimEngeli({ ben, haftaId: b.haftaId, anahtar: b.anahtar, slotlar: haftaSlotlari(b.haftaId, veri), alimlar: (veri && veri.alimlar) || {}, ayarlar });
+      const ortak = { haftaId: b.haftaId, anahtar: b.anahtar, slotlar: haftaSlotlari(b.haftaId, veri), alimlar: (veri && veri.alimlar) || {}, ayarlar, simdi };
+      const engel = alimEngeli({ ben, ...ortak });
+      const o = oncelikDurumu(ortak);
       return html`<div class="bos-kart">
         <div class="takas-ust">
           <strong>${slotAdi(b.anahtar)} boş</strong>
           <span class="soluk kucuk">${b.onceki ? `${b.onceki} bıraktı` : ''}</span>
         </div>
+        ${o && html`<div class="oncelik-bilgi"><span class="oncelik-etiket">ÖNCELİK</span>
+          <span>${o.adaylar.join(', ')} · ${saatYaz(o.bitis)}'e kadar</span></div>`}
         <div class="satir">
           <span class=${engel ? 'uyari-yazi kucuk' : 'soluk kucuk'}>${engel || `${kalanAlimHakki(ben, (veri && veri.alimlar) || {}, ayarlar)} alım hakkın var`}</span>
           <button class="btn birincil" disabled=${!!engel || mesgul === b.haftaId + b.anahtar} onClick=${() => al(b)}>Slotu al</button>

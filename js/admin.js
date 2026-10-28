@@ -114,19 +114,25 @@ function Kurallar({ ayarlar, yap, mesgul, ben, haftaId }) {
   const [gundeTek, setGundeTek] = useState(a.gundeTekSlot);
   const [erken, setErken] = useState(a.cikisErkenDk);
   const [kuralMetni, setKuralMetni] = useState(a.kuralMetni || '');
+  const [oncelikSaat, setOncelikSaat] = useState(a.oncelikSaat);
+  const [oncelikEsik, setOncelikEsik] = useState(a.oncelikEsik);
   return html`<div class="admin-bolum">
     <div class="form izgara-form">
       <label class="alan">Haftada en fazla alınabilecek boş slot
         <input type="number" min="0" max="10" value=${maxAlim} onInput=${(e) => setMaxAlim(Number(e.target.value))} /></label>
       <label class="alan">"Çıktım" en erken kaç dk önce
         <input type="number" min="0" max="180" value=${erken} onInput=${(e) => setErken(Number(e.target.value))} /></label>
+      <label class="alan">Öncelik süresi (saat, 0 = öncelik yok)
+        <input type="number" min="0" max="48" value=${oncelikSaat} onInput=${(e) => setOncelikSaat(Number(e.target.value))} /></label>
+      <label class="alan">Kaçtan az asıl slotu olan öncelikli
+        <input type="number" min="1" max="10" value=${oncelikEsik} onInput=${(e) => setOncelikEsik(Number(e.target.value))} /></label>
       <label class="alan onay"><input type="checkbox" checked=${gundeTek} onChange=${(e) => setGundeTek(e.target.checked)} />
-        Bir kişi aynı gün en fazla bir slot (3 saat)</label>
+        Bir kişi aynı gün en fazla bir slot</label>
     </div>
-    <label class="alan">Herkesin göreceği kurallar (her satır bir madde)
+    <label class="alan">Herkesin göreceği kurallar (boş bırakılırsa ayarlardan otomatik yazılır; her satır bir madde)
       <textarea rows="5" value=${kuralMetni} onInput=${(e) => setKuralMetni(e.target.value)}></textarea></label>
     <button class="btn birincil" disabled=${mesgul}
-      onClick=${() => yap(() => ayarlariKaydet({ maxAlim, gundeTekSlot: gundeTek, cikisErkenDk: erken, kuralMetni }), 'Kurallar kaydedildi.')}>Kaydet</button>
+      onClick=${() => yap(() => ayarlariKaydet({ maxAlim, gundeTekSlot: gundeTek, cikisErkenDk: erken, oncelikSaat, oncelikEsik, kuralMetni }), 'Kurallar kaydedildi.')}>Kaydet</button>
     <h3>Seçili hafta (${haftaBasligi(haftaId)})</h3>
     <p class="soluk">Takvim karıştıysa haftayı asıl kadroya döndürür; o haftanın takasları, devirleri ve çıkışları silinir.</p>
     <button class="btn tehlike" disabled=${mesgul}

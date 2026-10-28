@@ -2,15 +2,52 @@
 // Kurallar burada kontrol edilir; Firebase güvenlik kuralları ayrıca sahiplik
 // kontrolünü sunucu tarafında yapar.
 import {
-  haftaProgrami, slotAnahtari, slotCoz, slotGecmisMi, slotZamani, GUNLER, SAATLER, epostaAnahtari
+  haftaProgrami, slotAnahtari, slotCoz, slotGecmisMi, slotZamani, GUNLER, SAATLER, epostaAnahtari, SAHIPLER, saatYaz
 } from './rotasyon.js';
 import { oku, yaz, toplu, yeniAnahtar, SUNUCU_ZAMANI, sil } from './firebase.js';
 
 export const VARSAYILAN_AYARLAR = {
   maxAlim: 2, // Bir kişi haftada en fazla kaç boş slot alabilir
-  gundeTekSlot: true, // Bir kişi aynı gün en fazla bir slot (3 saat)
-  cikisErkenDk: 30 // "Çıktım" slot başlamadan kaç dakika önce basılabilir
+  gundeTekSlot: false, // true olursa: bir kişi aynı gün en fazla bir slot
+  cikisErkenDk: 30, // "Çıktım" slot başlamadan kaç dakika önce basılabilir
+  oncelikEsik: 3, // Haftada bundan az asıl slotu olanlar öncelikli
+  oncelikSaat: 2 // Boşalan slotu ilk kaç saat sadece öncelikliler alabilir
 };
+
+const ayar = (ayarlar) => ({ ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) });
+
+/** Haftanın asıl (takassız) programına göre kimin kaç slotu var. */
+export function asilSlotSayilari(haftaId) {
+  const say = {};
+  SAHIPLER.forEach((s) => { say[s] = 0; });
+  Object.values(haftaProgrami(haftaId)).forEach((s) => { say[s] = (say[s] || 0) + 1; });
+  return say;
+}
+
+export function oncelikliMi(sahip, haftaId, ayarlar) {
+  return (asilSlotSayilari(haftaId)[sahip] || 0) < ayar(ayarlar).oncelikEsik;
+}
+
+const alimSayisi = (alimlar, sahip) => Object.keys((alimlar || {})[sahip] || {}).length;
+
+/**
+ * Boş bir slotta öncelik süresi işliyor mu?
+ * { bitis, adaylar } döner; öncelik yoksa ya da bittiyse null.
+ * Öncelik, slotu bırakan kişi hariç, hâlâ alım hakkı olan öncelikli kişiler içindir.
+ */
+export function oncelikDurumu({ haftaId, anahtar, slotlar, alimlar, ayarlar, simdi = Date.now() }) {
+  const a = ayar(ayarlar);
+  const s = slotlar[anahtar];
+  if (!s || s.sahip !== '' || !s.birakma || !a.oncelikSaat) return null;
+  const { gun, saat } = slotCoz(anahtar);
+  const bas = slotZamani(haftaId, gun, saat).bas;
+  const bitis = Math.min(s.birakma + a.oncelikSaat * 3600000, bas - 3600000);
+  if (simdi >= bitis) return null;
+  const asil = asilSlotSayilari(haftaId);
+  const adaylar = SAHIPLER.filter((x) => asil[x] < a.oncelikEsik && x !== s.onceki && alimSayisi(alimlar, x) < a.maxAlim);
+  if (!adaylar.length) return null;
+  return { bitis, adaylar };
+}
 
 export const slotAdi = (anahtar) => {
   const { gun, saat } = slotCoz(anahtar);
@@ -62,22 +99,24 @@ function kayitVeSohbet(ben, degisiklik, metin, sohbetEk) {
 // ---- Alım kuralları ----
 
 /** Alım yapılabilir mi? Yapılamıyorsa nedenini döndürür. */
-export function alimEngeli({ ben, haftaId, anahtar, slotlar, alimlar, ayarlar }) {
-  const a = { ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) };
+export function alimEngeli({ ben, haftaId, anahtar, slotlar, alimlar, ayarlar, simdi = Date.now() }) {
+  const a = ayar(ayarlar);
   const { gun, saat } = slotCoz(anahtar);
   if (!slotlar[anahtar] || slotlar[anahtar].sahip !== '') return 'Bu slot artık boş değil.';
-  if (slotGecmisMi(haftaId, gun, saat)) return 'Bu slotun saati geçti.';
-  const aldiklarim = Object.keys((alimlar || {})[ben.sahip] || {}).length;
-  if (aldiklarim >= a.maxAlim) return `Bu hafta en fazla ${a.maxAlim} boş slot alabilirsin; hakkın doldu.`;
+  if (slotGecmisMi(haftaId, gun, saat, simdi)) return 'Bu slotun saati geçti.';
+  if (alimSayisi(alimlar, ben.sahip) >= a.maxAlim) return `Bu hafta en fazla ${a.maxAlim} boş slot alabilirsin; hakkın doldu.`;
   if (a.gundeTekSlot && gundekiSlotlar(slotlar, ben.sahip, gun).length > 0) {
-    return `${GUNLER[gun]} günü zaten bir slotun var. Günde en fazla 3 saat çıkılabilir.`;
+    return `${GUNLER[gun]} günü zaten bir slotun var.`;
+  }
+  const o = oncelikDurumu({ haftaId, anahtar, slotlar, alimlar, ayarlar, simdi });
+  if (o && !o.adaylar.includes(ben.sahip)) {
+    return `Öncelik slotu az olanlarda (${o.adaylar.join(', ')}). Almazlarsa ${saatYaz(o.bitis)}'den sonra alabilirsin.`;
   }
   return null;
 }
 
 export function kalanAlimHakki(ben, alimlar, ayarlar) {
-  const a = { ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) };
-  return Math.max(0, a.maxAlim - Object.keys((alimlar || {})[ben.sahip] || {}).length);
+  return Math.max(0, ayar(ayarlar).maxAlim - alimSayisi(alimlar, ben.sahip));
 }
 
 // ---- İşlemler ----
@@ -89,7 +128,7 @@ export async function slotuBirak(ben, haftaId, anahtar, not = '') {
   if (slotGecmisMi(haftaId, gun, saat)) throw new Error('Saati geçmiş bir slot bırakılamaz.');
   if (h.cikislar[anahtar]) throw new Error('Bu slota çıkış yapılmış, bırakılamaz.');
   const d = {};
-  d[`haftalar/${haftaId}/slotlar/${anahtar}`] = { sahip: '', onceki: ben.sahip };
+  d[`haftalar/${haftaId}/slotlar/${anahtar}`] = { sahip: '', onceki: ben.sahip, birakma: SUNUCU_ZAMANI() };
   const metin = `${ben.sahip}, ${slotAdi(anahtar)} slotunu boşalttı.`;
   kayitVeSohbet(ben, d, metin, { tip: 'bos', hafta: haftaId, slot: anahtar, metin: not.trim().slice(0, 300) });
   await toplu(d);
@@ -107,7 +146,8 @@ export async function slotuAl(ben, haftaId, anahtar, ayarlar) {
   await toplu(d);
 }
 
-export async function takasTeklifEt(ben, haftaId, verilen, istenen, mesaj) {
+export async function takasTeklifEt(ben, haftaId, verilen, istenen, mesaj, ayarlar) {
+  const gunKurali = ayar(ayarlar).gundeTekSlot;
   const h = await tazeHafta(haftaId);
   const s = h.slotlar;
   const alan = s[istenen]?.sahip;
@@ -120,10 +160,10 @@ export async function takasTeklifEt(ben, haftaId, verilen, istenen, mesaj) {
   }
   const vg = slotCoz(verilen).gun;
   const ig = slotCoz(istenen).gun;
-  if (gundekiSlotlar(s, ben.sahip, ig, [verilen]).length > 0) {
+  if (gunKurali && gundekiSlotlar(s, ben.sahip, ig, [verilen]).length > 0) {
     throw new Error(`${GUNLER[ig]} günü zaten başka bir slotun var; aynı gün iki slot olmaz.`);
   }
-  if (gundekiSlotlar(s, alan, vg, [istenen]).length > 0) {
+  if (gunKurali && gundekiSlotlar(s, alan, vg, [istenen]).length > 0) {
     throw new Error(`${alan} kişisinin ${GUNLER[vg]} günü zaten bir slotu var.`);
   }
   const id = yeniAnahtar('takaslar');

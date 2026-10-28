@@ -209,6 +209,17 @@ input::placeholder, textarea::placeholder { color: var(--soluk2); }
 .tablo-ust { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .tablo-ust .mono { font-size: 12px; }
 
+/* Slot hakları */
+.hak-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.hak-satir { background: var(--yuzey2); border: 1px solid var(--cizgi); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.hak-satir.oncelikli { background: #1E2A1F; border-color: #3F6B47; }
+.hak-ust { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.hak-ust strong { font-size: 16px; }
+.hak-sayilar { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--soluk); }
+.hak-sayilar b { color: var(--metin); font-size: 15px; }
+.oncelik-etiket { padding: 2px 8px; border-radius: 999px; background: var(--yesil); color: #0B2414; font-weight: 800; font-size: 10px; letter-spacing: .05em; }
+.oncelik-bilgi { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: #CDEBD3; }
+
 /* Takas */
 .takas-kart, .bos-kart { border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .takas-kart { background: var(--yuzey2); border: 1px solid var(--cizgi); }
