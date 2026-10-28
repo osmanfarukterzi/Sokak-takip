@@ -1,0 +1,89 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "uyeler": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      "$k": {
+        ".read": "auth != null && $k == auth.token.email.replace('.', ',')",
+        ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')"
+      }
+    },
+    "ayarlar": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')"
+    },
+    "talepler": {
+      ".read": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')",
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com') || (auth != null && auth.uid == $uid && auth.token.email_verified == true && !root.child('uyeler').child(auth.token.email.replace('.', ',')).exists())"
+      }
+    },
+    "cevrimici": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid && (auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))"
+      }
+    },
+    "sohbet": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      ".indexOn": [
+        "zaman"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid) || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')",
+        ".validate": "newData.hasChildren(['zaman', 'tip', 'uid']) && (!newData.child('metin').exists() || (newData.child('metin').isString() && newData.child('metin').val().length <= 1000))"
+      }
+    },
+    "kayit": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      ".indexOn": [
+        "zaman"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid) || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')"
+      }
+    },
+    "geribildirim": {
+      ".read": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')",
+      "$id": {
+        ".write": "((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid) || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')"
+      }
+    },
+    "takaslar": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      ".indexOn": [
+        "zaman"
+      ],
+      "$id": {
+        ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com') || ((auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && ((!data.exists() && newData.child('gonderen').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && newData.child('durum').val() == 'bekliyor') || (data.exists() && data.child('durum').val() == 'bekliyor' && newData.child('gonderen').val() == data.child('gonderen').val() && newData.child('alan').val() == data.child('alan').val() && newData.child('verilen').val() == data.child('verilen').val() && newData.child('istenen').val() == data.child('istenen').val() && newData.child('hafta').val() == data.child('hafta').val() && ((data.child('alan').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && (newData.child('durum').val() == 'kabul' || newData.child('durum').val() == 'red')) || (data.child('gonderen').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && newData.child('durum').val() == 'iptal')))))"
+      }
+    },
+    "haftalar": {
+      ".read": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')))",
+      "$h": {
+        ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com')",
+        "slotlar": {
+          ".write": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists()",
+          "$s": {
+            ".write": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && data.exists() && ((data.child('sahip').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && newData.child('sahip').val() == '') || (data.child('sahip').val() == '' && newData.child('sahip').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val()) || (newData.child('takas').isString() && root.child('takaslar').child(newData.child('takas').val()).child('durum').val() == 'bekliyor' && root.child('takaslar').child(newData.child('takas').val()).child('alan').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && root.child('takaslar').child(newData.child('takas').val()).child('hafta').val() == $h && ((root.child('takaslar').child(newData.child('takas').val()).child('verilen').val() == $s && data.child('sahip').val() == root.child('takaslar').child(newData.child('takas').val()).child('gonderen').val() && newData.child('sahip').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val()) || (root.child('takaslar').child(newData.child('takas').val()).child('istenen').val() == $s && data.child('sahip').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && newData.child('sahip').val() == root.child('takaslar').child(newData.child('takas').val()).child('gonderen').val()))))",
+            ".validate": "newData.child('sahip').isString()"
+          }
+        },
+        "cikislar": {
+          "$s": {
+            ".write": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && !data.exists() && newData.child('uid').val() == auth.uid && root.child('haftalar').child($h).child('slotlar').child($s).child('sahip').val() == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val()"
+          }
+        },
+        "alimlar": {
+          "$sahip": {
+            "$s": {
+              ".write": "(auth != null && auth.token.email_verified == true && (root.child('uyeler').child(auth.token.email.replace('.', ',')).exists() || (auth != null && auth.token.email_verified == true && auth.token.email == 'osmanfarukterzi@gmail.com'))) && $sahip == root.child('uyeler').child(auth.token.email.replace('.', ',')).child('sahip').val() && !data.exists() && root.child('haftalar').child($h).child('slotlar').child($s).child('sahip').val() == ''"
+            }
+          }
+        }
+      }
+    }
+  }
+}
