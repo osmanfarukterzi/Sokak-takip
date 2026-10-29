@@ -328,7 +328,7 @@ function BenPaneli({ ben, model, buModel, buHaftaVeri, ayarlar, kurallar, bildir
       <label class="gizli" for="geri-bildirim">Mesajın</label>
       <textarea id="geri-bildirim" rows="2" maxlength="2000" placeholder="Bir şey yanlış mı görünüyor? Yaz, admin görsün." value=${metin}
         onInput=${(e) => setMetin(e.target.value)}
-        onKeyDown=${(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); gonder(); } }}></textarea>
+        onKeyDown=${(e) => { if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) { e.preventDefault(); gonder(); } }}></textarea>
       <button class="btn" disabled=${!metin.trim() || gonderiliyor}>Gönder</button>
       <span class="soluk kucuk">Enter ile gönder · Shift+Enter yeni satır</span>
     </form>
