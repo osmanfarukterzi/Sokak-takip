@@ -296,6 +296,20 @@ function Ana({ ben }) {
 
 function BenPaneli({ ben, model, buModel, buHaftaVeri, ayarlar, kurallar, bildir, ac }) {
   const [metin, setMetin] = useState('');
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const gonder = async () => {
+    if (!metin.trim() || gonderiliyor) return;
+    setGonderiliyor(true);
+    try {
+      await geribildirimGonder(ben, metin);
+      setMetin('');
+      bildir('Teşekkürler, admin\'e iletildi.');
+    } catch (err) {
+      bildir('Gönderilemedi.', true);
+    } finally {
+      setGonderiliyor(false);
+    }
+  };
   const slotlarim = model.flatMap((g) => g.slotlar).filter((s) => s.benim);
   const kalan = kalanAlimHakki(ben, (buHaftaVeri && buHaftaVeri.alimlar) || {}, ayarlar);
   return html`<section class="kart" aria-label="Benim sayfam">
@@ -310,13 +324,13 @@ function BenPaneli({ ben, model, buModel, buHaftaVeri, ayarlar, kurallar, bildir
     <h3>Kurallar</h3>
     <ul class="kural-listesi">${kurallar.map((k) => html`<li>${k}</li>`)}</ul>
     <h3>Hata ya da öneri bildir</h3>
-    <form class="form" onSubmit=${async (e) => {
-      e.preventDefault();
-      try { await geribildirimGonder(ben, metin); setMetin(''); bildir('Teşekkürler, admin\'e iletildi.'); } catch (err) { bildir('Gönderilemedi.', true); }
-    }}>
+    <form class="form" onSubmit=${(e) => { e.preventDefault(); gonder(); }}>
       <label class="gizli" for="geri-bildirim">Mesajın</label>
-      <textarea id="geri-bildirim" rows="2" maxlength="2000" placeholder="Bir şey yanlış mı görünüyor? Yaz, admin görsün." value=${metin} onInput=${(e) => setMetin(e.target.value)}></textarea>
-      <button class="btn" disabled=${!metin.trim()}>Gönder</button>
+      <textarea id="geri-bildirim" rows="2" maxlength="2000" placeholder="Bir şey yanlış mı görünüyor? Yaz, admin görsün." value=${metin}
+        onInput=${(e) => setMetin(e.target.value)}
+        onKeyDown=${(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); gonder(); } }}></textarea>
+      <button class="btn" disabled=${!metin.trim() || gonderiliyor}>Gönder</button>
+      <span class="soluk kucuk">Enter ile gönder · Shift+Enter yeni satır</span>
     </form>
   </section>`;
 }
