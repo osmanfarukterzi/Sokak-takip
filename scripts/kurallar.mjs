@@ -60,7 +60,9 @@ const kurallar = {
         // Yeni mesaj; ya da kişinin kendi düz mesajını düzenlemesi/silmesi; admin her şeyi.
         '.write': `(${UYE_MI} && !data.exists() && newData.child('uid').val() == auth.uid) || ${ADMIN}`
           + ` || (${UYE_MI} && data.exists() && data.child('uid').val() == auth.uid && data.child('tip').val() == 'mesaj'`
-          + ` && (!newData.exists() || (newData.child('uid').val() == auth.uid && newData.child('tip').val() == 'mesaj' && ${ayni('zaman')})))`,
+          + ` && (!newData.exists() || (newData.child('uid').val() == auth.uid && newData.child('tip').val() == 'mesaj' && ${ayni('zaman')})))`
+          // Kişi kendi kartlarını (takas, boş slot) da silebilir.
+          + ` || (${UYE_MI} && data.exists() && data.child('uid').val() == auth.uid && !newData.exists())`,
         '.validate': "newData.hasChildren(['zaman', 'tip', 'uid']) && (!newData.child('metin').exists() || (newData.child('metin').isString() && newData.child('metin').val().length <= 1000))"
       }
     },
@@ -84,7 +86,10 @@ const kurallar = {
           `(!data.exists() && newData.child('gonderen').val() == ${BEN} && newData.child('durum').val() == 'bekliyor')` +
           ` || (data.exists() && data.child('durum').val() == 'bekliyor' && ${['gonderen', 'alan', 'verilen', 'istenen', 'hafta'].map(ayni).join(' && ')} && (` +
           `(data.child('alan').val() == ${BEN} && (newData.child('durum').val() == 'kabul' || newData.child('durum').val() == 'red'))` +
-          ` || (data.child('gonderen').val() == ${BEN} && newData.child('durum').val() == 'iptal')))))`
+          ` || (data.child('gonderen').val() == ${BEN} && newData.child('durum').val() == 'iptal')))` +
+          // Sonuçlanmış (iptal/red) teklifi taraflardan biri silebilir; kabul edilenler kayıt olarak kalır.
+          ` || (data.exists() && !newData.exists() && (data.child('durum').val() == 'iptal' || data.child('durum').val() == 'red')` +
+          ` && (data.child('gonderen').val() == ${BEN} || data.child('alan').val() == ${BEN}))))`
       }
     },
 

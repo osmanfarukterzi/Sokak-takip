@@ -232,6 +232,11 @@ input::placeholder, textarea::placeholder { color: var(--soluk2); }
 .sonuclar { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--cizgi-acik); padding-top: 10px; }
 .sonuc-satir { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--soluk); }
 .durum-yazi { font-size: 12px; font-weight: 800; }
+.durum-cip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--yuzey3); color: var(--soluk); white-space: nowrap; }
+.durum-cip.kabul { color: var(--yesil); }
+.durum-cip.bekliyor { color: var(--amber); }
+.sonuc-sag { display: inline-flex; align-items: center; gap: 10px; flex: none; }
+.sonuc-satir { align-items: center; }
 .durum-yazi.kabul { color: var(--yesil); }
 .durum-yazi.red, .durum-yazi.iptal { color: var(--kirmizi); }
 .durum-yazi.bekliyor { color: var(--amber); }

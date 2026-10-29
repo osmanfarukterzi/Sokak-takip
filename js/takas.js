@@ -4,7 +4,7 @@ import { Ikon, zamanOnce, basHarfler } from './ortak.js';
 import { GUN_KISA, SAAT_KISA, slotCoz, haftaBasligi, saatYaz } from './rotasyon.js';
 import {
   takasiYanitla, takasiIptalEt, slotuAl, slotAdi, kalanAlimHakki, mesajGonder, alimEngeli, haftaSlotlari, oncelikDurumu,
-  mesajDuzenle, mesajSil
+  mesajDuzenle, mesajSil, takasiSil
 } from './islemler.js';
 
 const kisaSlot = (k) => {
@@ -61,6 +61,18 @@ export function TakasPaneli({ takaslar, ben, bosSlotlar, haftaVeri, ayarlar, bil
     }
   };
 
+  const sil = async (id) => {
+    setMesgul(id);
+    try {
+      await takasiSil(id);
+      bildir('Teklif silindi.');
+    } catch (e) {
+      bildir(e.message || 'Silinemedi.', true);
+    } finally {
+      setMesgul('');
+    }
+  };
+
   return html`<section class="kart" aria-label="Takas ve devir">
     <div class="kart-baslik">
       <h2>Takas & devir</h2>
@@ -92,9 +104,14 @@ export function TakasPaneli({ takaslar, ben, bosSlotlar, haftaVeri, ayarlar, bil
       Bekleyen teklif ya da boş slot yok. Takas için takvimden bir slota dokun.</p>`}
 
     ${sonuclar.length > 0 && html`<div class="sonuclar">
+      <span class="kucuk-baslik">Son teklifler</span>
       ${sonuclar.map(([id, t]) => html`<div class="sonuc-satir" key=${id}>
-        <span>${t.gonderen} ↔ ${t.alan} · ${kisaSlot(t.verilen)} / ${kisaSlot(t.istenen)}</span>
-        <span class=${'durum-yazi ' + t.durum}>${{ kabul: 'Kabul', red: 'Red', iptal: 'İptal' }[t.durum] || t.durum}</span>
+        <span>${t.gonderen} → ${t.alan} · ${kisaSlot(t.verilen)} ↔ ${kisaSlot(t.istenen)}</span>
+        <span class="sonuc-sag">
+          <span class=${'durum-cip ' + t.durum}>${{ kabul: 'Kabul edildi', red: 'Reddedildi', iptal: 'İptal edildi' }[t.durum] || t.durum}</span>
+          ${t.durum !== 'kabul' && html`<button class="metin-btn tehlike-yazi" disabled=${mesgul === id}
+            onClick=${() => sil(id)}>Sil</button>`}
+        </span>
       </div>`)}
     </div>`}
   </section>`;
@@ -167,6 +184,8 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
         }
         const benim = m.uid === ben.uid;
         const t = m.tip === 'takas' ? (takaslar || {})[m.takas] : null;
+        // Silinmiş bir takasın kartını gösterme (takaslar henüz yüklenmediyse bekle).
+        if (m.tip === 'takas' && !t) return null;
         const ad = m.ad || m.sahip;
         return html`<div class=${'mesaj-satir' + (benim ? ' benim' : '')} key=${id}>
           ${!benim && (m.foto
@@ -179,7 +198,7 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
             ${m.tip === 'takas' && t && html`<span>${m.metin || 'Takas teklifi'}</span>
               <div class="sohbet-slot"><div><span class="soluk kucuk">Takas teklifi → ${t.alan}</span>
               <strong>${kisaSlot(t.verilen)} ↔ ${kisaSlot(t.istenen)}</strong></div>
-              <span class=${'durum-yazi ' + t.durum}>${{ bekliyor: 'Bekliyor', kabul: 'Kabul', red: 'Red', iptal: 'İptal' }[t.durum]}</span></div>`}
+              <span class=${'durum-cip ' + t.durum}>${{ bekliyor: 'Bekliyor', kabul: 'Kabul edildi', red: 'Reddedildi', iptal: 'İptal edildi' }[t.durum]}</span></div>`}
             ${m.tip === 'mesaj' && (duzen && duzen.id === id
               ? html`<form class="duzenle-form" onSubmit=${(e) => { e.preventDefault(); kaydet(); }}>
                   <label class="gizli" for=${'duzen-' + id}>Mesajı düzenle</label>
@@ -193,8 +212,8 @@ export function Sohbet({ mesajlar, ben, cevrimici, takaslar, haftaVeri, ayarlar,
                 </form>`
               : html`<span>${m.metin}${m.duzenlendi ? html` <span class="duzenlendi">(düzenlendi)</span>` : ''}</span>`)}
           </div>
-          ${m.tip === 'mesaj' && (benim || ben.admin) && !(duzen && duzen.id === id) && html`<span class="mesaj-islem">
-            ${benim && html`<button class="metin-btn" onClick=${() => setDuzen({ id, metin: m.metin || '' })}>Düzenle</button>`}
+          ${(benim || ben.admin) && !(duzen && duzen.id === id) && html`<span class="mesaj-islem">
+            ${benim && m.tip === 'mesaj' && html`<button class="metin-btn" onClick=${() => setDuzen({ id, metin: m.metin || '' })}>Düzenle</button>`}
             <button class="metin-btn tehlike-yazi" onClick=${() => sil(id, benim)}>Sil</button>
           </span>`}
           </div>

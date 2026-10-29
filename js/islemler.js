@@ -211,6 +211,13 @@ export async function takasiIptalEt(ben, id) {
   await toplu({ [`takaslar/${id}/durum`]: 'iptal' });
 }
 
+/** İptal edilmiş ya da reddedilmiş bir teklifi tamamen siler. */
+export async function takasiSil(id) {
+  const t = await oku(`takaslar/${id}`);
+  if (t && (t.durum === 'bekliyor' || t.durum === 'kabul')) throw new Error('Sadece iptal edilen ya da reddedilen teklifler silinebilir.');
+  await sil(`takaslar/${id}`);
+}
+
 /** "Çıktım": slot başlamadan en çok X dk önce ve bitmeden önce basılabilir. */
 export function cikisEngeli(ben, haftaId, anahtar, slotlar, cikislar, ayarlar, simdi = Date.now()) {
   const a = { ...VARSAYILAN_AYARLAR, ...(ayarlar || {}) };
