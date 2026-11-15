@@ -22,7 +22,7 @@ export const ADMIN_EPOSTA = 'osmanfarukterzi@gmail.com';
 // Önizleme modu: sadece canlı site dışındaki adreslerde (Vercel deneme adresleri)
 // "?onizleme" ile açılır. Girişsiz görüntüler ve veritabanına HİÇBİR ŞEY yazmaz.
 export const ONIZLEME = typeof location !== 'undefined'
-  && location.hostname !== 'sokak-takip.vercel.app'
+  && /-osmanfaruk\.vercel\.app$/.test(location.hostname)
   && new URLSearchParams(location.search).has('onizleme');
 const yazmaYok = (ne) => { console.info('[Meydan önizleme] yazılmadı:', ne); return Promise.resolve(); };
 

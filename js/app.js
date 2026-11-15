@@ -338,5 +338,5 @@ function BenPaneli({ ben, model, buModel, buHaftaVeri, ayarlar, kurallar, bildir
 render(html`<${Uygulama} />`, document.getElementById('uygulama'));
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
